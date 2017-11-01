@@ -18,8 +18,7 @@ import pandas as pd
 from imblearn.over_sampling import SMOTE
 # machine learning
 from sklearn.cross_validation import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import average_precision_score
 from sklearn.metrics import confusion_matrix, cohen_kappa_score
 from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
@@ -35,16 +34,25 @@ import argparse
 import scipy.io as sio
 
 class predictor(object):
+    
     def __init__(self, height = None, width = None, ratio=None, type=None):
         """constructor of the class"""
+        
         self.dF = []
         self.feature = []
         self.Class = []
         self.featureNumpy = []
         self.ClassNumpy = []
         
-    def loadData( self, fileName, feaRowStart, feaRowEnd, colClass, 
-                 delimitter=',' ):
+        self.model = []
+        
+        self.fTrain = []
+        self.fTest = []
+        self.cTrain = []
+        self.cTest = []
+        
+    def loadData( self, fileName, colClass, feaRowStart = None, 
+                 feaRowEnd = None, delimiter=','):
         """loading data
            @param fileName - name of the csv file
            @param fearowStart - starting row of the feature or Class
@@ -52,12 +60,19 @@ class predictor(object):
            @param colClass - number of the col for Class (indexing starts from 0)
            @param delimitter - default comma
         """
-        self.dF = pd.read_csv( fileName, delimitter = ',')
-        self.feature = df.iloc[feaRowStart:feaRowEnd, 0:colClass-1]
-        self.Class = df.loc[feaRowStart:feaRowEnd, colClass]
+        self.dF = pd.read_csv( fileName, delimiter = delimiter)
+        if feaRowStart is not None and feaRowEnd is not None:
+            self.feature = self.dF.iloc[feaRowStart:feaRowEnd, 0:colClass-1]
+            self.Class = self.dF.loc[feaRowStart:feaRowEnd, colClass]
+        else:
+            self.feature = self.dF.iloc[:,1:29]
+            self.Class = self.dF.Class 
+            #self.feature = self.dF.iloc[:, 0:self.dF.shape[1]-1]
+            #self.Class = self.dF.loc[:, self.dF.shape[1]-1:self.dF.shape[1]]  
+            
         self.dataConvertToNumpy()
         
-    def dataConvertToNumpy():
+    def dataConvertToNumpy( self ):
         """Convert feature and Class to numpy, this can also be used for 
            updating
         """
@@ -79,21 +94,45 @@ class predictor(object):
         print("Warning: You are increasing the dataset to balance the data\n")
         return feature_resample, Class_resample
     
+    def testTrainSplit(self, feature, Class, test_size = 0.2, 
+                           random_state = 0):
+        """utility function for splitting in test and train (fixed)
+        """
+        # training and testing sets
+        fTrain, fTest, cTrain, cTest = train_test_split( feature, Class,
+                                            test_size = test_size, 
+                                            random_state = random_state)
+        self.fTrain = fTrain
+        self.fTest = fTest
+        self.cTrain = cTrain
+        self.cTest = cTest
+        
+        return fTrain, fTest, cTrain, cTest
+    
     def confusionMetric( self, classTest, classPred):
         """copying unbalanced for multiple times to balance dataset
            @param classTest
            @param classPred
            @return accruacy - one number
-           @return confMat - 2x2 matrix for 2 class classifier
-           @return cohenKappaMat - TODO
+           @return matConf - 2x2 matrix for 2 class classifier
+           @return matCohenKappa - TODO
+           @return strClassificationReport - TODO
         """
         # accuracy of the model - in one number
         accuracy = average_precision_score( classTest, classPred )
         # confusion matrix 2x2 matric
-        confMat = confusion_matrix(classTest, classPred)
+        matConf = confusion_matrix(classTest, classPred)
         # cohen Kappa is applicable for unbalanced data
-        cohenKappaMat = cohen_kappa_score(classTest, classPred)
+        matCohenKappa = cohen_kappa_score(classTest, classPred)
+        # classification report
+        strClassificationReport = classification_report(classTest, classPred)
         
-        return accuracy, confMat, cohenKappaMat
+        return accuracy, matConf, matCohenKappa, strClassificationReport
 
-    
+    def trainModel( self, featureTrain, classTrain):
+        """virtual function for training
+        """
+        
+    def testModel( self, classTest, classPred):
+        """virtual function for testing
+        """
