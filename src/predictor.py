@@ -32,10 +32,12 @@ import operator as op
 import time
 import argparse
 import scipy.io as sio
+import logging
+import seaborn as sn
 
 class predictor(object):
     
-    def __init__(self, height = None, width = None, ratio=None, type=None):
+    def __init__(self, loggingLevel = logging.DEBUG, enableLoggingTime = False):
         """constructor of the class"""
         
         self.dF = []
@@ -43,6 +45,8 @@ class predictor(object):
         self.Class = []
         self.featureNumpy = []
         self.ClassNumpy = []
+        self.featureNo = []
+        self.dataNo = []
         
         self.model = []
         
@@ -50,9 +54,44 @@ class predictor(object):
         self.fTest = []
         self.cTrain = []
         self.cTest = []
+        self.baseLogger = []
         
-    def loadData( self, fileName, colClass, feaRowStart = None, 
-                 feaRowEnd = None, delimiter=','):
+        self.loggingLevel = loggingLevel
+        if enableLoggingTime:
+            self.loggingFormatter = \
+                '[%(asctime)s] %(levelname)s: [%(name)s] %(message)s'
+        else:
+            self.loggingFormatter = '%(levelname)s:%(message)s'
+        self.initLogger()
+        self.baseLogger.debug('debug message')
+        
+    def initLogger( self ):
+        """Initializing Logger
+        """
+        # create logger
+        self.baseLogger = logging.getLogger(self.__class__.__name__)
+        self.baseLogger.handlers = [h for h in self.baseLogger.handlers \
+                               if not isinstance(h, logging.StreamHandler)]
+        self.baseLogger.setLevel( self.loggingLevel )
+        # create file handler which logs even debug messages
+        fh = logging.FileHandler('predictor.log')
+        fh.setLevel(logging.DEBUG)
+        # create console handler and set level to debug
+        ch = logging.StreamHandler()
+        ch.setLevel( self.loggingLevel )
+        # create formatter
+        formatter = logging.Formatter( self.loggingFormatter,
+                                      datefmt='%m/%d/%Y %I:%M:%S %p' )
+        # add formatter to ch and fh
+        fh.setFormatter(formatter)
+        ch.setFormatter(formatter)
+        # add ch to logger
+        self.baseLogger.addHandler(ch)
+        #self.baseLogger.addHandler(fh)
+        
+    def loadData( self, fileName, colClass = 31, colFeaStart = 1, 
+                 colFeaEnd = 30, feaRowStart = 2, 
+                 feaRowEnd = 284808, delimiter = ','):
         """loading data
            @param fileName - name of the csv file
            @param fearowStart - starting row of the feature or Class
@@ -61,12 +100,19 @@ class predictor(object):
            @param delimitter - default comma
         """
         self.dF = pd.read_csv( fileName, delimiter = delimiter)
-        if feaRowStart is not None and feaRowEnd is not None:
-            self.feature = self.dF.iloc[feaRowStart:feaRowEnd, 0:colClass-1]
-            self.Class = self.dF.loc[feaRowStart:feaRowEnd, colClass]
-        else:
-            self.feature = self.dF.iloc[:,1:29]
-            self.Class = self.dF.Class 
+        #if feaRowStart is not None and feaRowEnd is not None \
+               #colFeaStart is not None and colFeaEnd is not None :
+        self.feature = self.dF.iloc[feaRowStart-1:feaRowEnd, 
+                                    colFeaStart-1:colFeaEnd]
+        self.Class = self.dF.iloc[feaRowStart-1:feaRowEnd, colClass-1]
+        self.dataNo = feaRowEnd - feaRowStart + 1
+        self.featureNo = colFeaEnd - colFeaStart + 1
+        print('Database loaded with: \n \
+                  \t Feature No - %d \n \
+                  \t Total data points - %d\n' % (self.featureNo, self.dataNo))
+        #else:
+        #    self.feature = self.dF.iloc[:,0:30]
+        #    self.Class = self.dF.Class 
             #self.feature = self.dF.iloc[:, 0:self.dF.shape[1]-1]
             #self.Class = self.dF.loc[:, self.dF.shape[1]-1:self.dF.shape[1]]  
             
@@ -109,7 +155,7 @@ class predictor(object):
         
         return fTrain, fTest, cTrain, cTest
     
-    def confusionMetric( self, classTest, classPred):
+    def getMetrics( self, classTest, classPred):
         """copying unbalanced for multiple times to balance dataset
            @param classTest
            @param classPred
@@ -132,7 +178,50 @@ class predictor(object):
     def trainModel( self, featureTrain, classTrain):
         """virtual function for training
         """
+        print('Traning model ...')
         
     def testModel( self, classTest, classPred):
         """virtual function for testing
         """
+        print('Testing model ...')
+    
+    def printConfusionMatrix( self, confMatrix, 
+                             classLabels=["0", "1"],
+                             filename='confusionMatrix', dpi=600, cmap=None ):
+        
+        cmap = cmap or sn.cubehelix_palette(dark=0, light=1, as_cmap=True)
+        df_cm = pd.DataFrame(confMatrix, index = [i for i in classLabels],
+                  columns = [i for i in classLabels])
+        plt.figure(figsize = (2.5,2))
+        sn.heatmap(df_cm, annot=True, cmap=cmap)
+        plt.savefig( filename+".png", dpi=dpi )
+        # normalizing matrix
+#        norm_conf = []
+#        for i in confMatrix:
+#            a = 0
+#            tmp_arr = []
+#            a = sum(i, 0)
+#            for j in i:
+#                tmp_arr.append(float(j)/float(a))
+#            norm_conf.append(tmp_arr)
+#        
+#        fig = plt.figure()
+#        plt.clf()
+#        ax = fig.add_subplot(111)
+#        ax.set_aspect(1)
+#        res = ax.imshow(np.array(norm_conf), cmap=plt.cm.jet, 
+#                        interpolation='nearest')
+#        
+#        width, height = confMatrix.shape
+#        
+#        for x in xrange(width):
+#            for y in xrange(height):
+#                ax.annotate(str(confMatrix[x][y]), xy=(y, x), 
+#                            horizontalalignment='center',
+#                            verticalalignment='center')
+#        
+#        cb = fig.colorbar(res)
+#        #alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+#        plt.xticks(range(classLabels), classLabels[:width])
+#        plt.yticks(range(classLabels), classLabels[:height])
+#        plt.savefig(filename+".png", dpi=dpi)
