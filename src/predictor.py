@@ -18,6 +18,7 @@ import pandas as pd
 from imblearn.over_sampling import SMOTE
 # machine learning
 from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import cross_val_score
 from sklearn.metrics import average_precision_score
 from sklearn.metrics import confusion_matrix, cohen_kappa_score
 from sklearn.metrics import classification_report
@@ -63,7 +64,7 @@ class predictor(object):
         else:
             self.loggingFormatter = '%(levelname)s:%(message)s'
         self.initLogger()
-        self.baseLogger.debug('debug message')
+        self.baseLogger.debug('Initializing machine learning predictor')
         
     def initLogger( self ):
         """Initializing Logger
@@ -155,7 +156,7 @@ class predictor(object):
         
         return fTrain, fTest, cTrain, cTest
     
-    def getMetrics( self, classTest, classPred):
+    def getMetrics( self, classTest, classPred, boolPrint = True):
         """copying unbalanced for multiple times to balance dataset
            @param classTest
            @param classPred
@@ -173,17 +174,47 @@ class predictor(object):
         # classification report
         strClassificationReport = classification_report(classTest, classPred)
         
-        return accuracy, matConf, matCohenKappa, strClassificationReport
-
-    def trainModel( self, featureTrain, classTrain):
-        """virtual function for training
-        """
-        print('Traning model ...')
+        if boolPrint is True:
+            print('Avg. Precision Score = %0.2f %%\n' % (accuracy*100) )
+            print('Classification Report:\n = %s\n' % (strClassificationReport) )
+            print('Confusion Matrix:\n' )
+            print(matConf)
+            print('\n')
         
-    def testModel( self, classTest, classPred):
-        """virtual function for testing
+        return accuracy, matConf, matCohenKappa, strClassificationReport
+    
+    def trainModel( self, featureTrain, classTrain, pModel=None):
+        """overriding virtual function for training
         """
-        print('Testing model ...')
+        # if model is given, override with internal model
+        if pModel is not None:
+            self.model = pModel
+        # training the model
+        print('Traning model ...')
+        self.model.fit(featureTrain, classTrain)
+        return self.model
+    
+    def testModel( self, featureTest, pModel=None):
+        """overriding virtual function for testing
+        """
+        # if model is given, override with internal model
+        if pModel is not None:
+            self.model = pModel 
+        print('Traning model ...')
+        # predicting with trained model
+        classPred = self.model.predict( featureTest )
+    
+        return classPred
+
+#    def trainModel( self, featureTrain, classTrain):
+#        """virtual function for training
+#        """
+#        print('Traning model ...')
+#        
+#    def testModel( self, classTest, classPred):
+#        """virtual function for testing
+#        """
+#        print('Testing model ...')
     
     def printConfusionMatrix( self, confMatrix, 
                              classLabels=["0", "1"],
@@ -225,3 +256,14 @@ class predictor(object):
 #        plt.xticks(range(classLabels), classLabels[:width])
 #        plt.yticks(range(classLabels), classLabels[:height])
 #        plt.savefig(filename+".png", dpi=dpi)
+        
+    def crossValidate(self, pfeatures, pClass, nFold=5, pModel=None, 
+                      scoring='accuracy'):
+        """function for cross validation
+        """
+        # if model is given, override with internal model
+        if pModel is not None:
+            self.model = pModel 
+        scores = cross_val_score(self.model, pfeatures, pClass, cv=nFold, 
+                                 scoring=scoring)
+        return scores, scores.mean(), scores.std()

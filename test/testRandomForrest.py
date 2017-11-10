@@ -1,9 +1,9 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov  1 09:17:21 2017
+Created on Fri Nov  10 09:17:21 2017
 
-@author: Mirza Elahi (me5vp), Shabnam Wahed (sw2wm)
+@author: Mirza Elahi (me5vp)
 """
 import sys
 # appending the path to PubPyPlot
@@ -16,9 +16,12 @@ def main():
     
     rf = randomForrest( enableLoggingTime=True )
     #load data
-    rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 280808)
+    rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 28008)
     #split train and test by 80-20 ratio
     rf.testTrainSplit( rf.feature, rf.Class, test_size = 0.3)
+    #load model
+    rf.loadModel(n_estimators=50, oob_score=True, n_jobs=4)
+    print( rf.toString() )
     #train model
     rf.trainModel( featureTrain = rf.fTrain, classTrain = rf.cTrain )
     #test model
@@ -26,14 +29,9 @@ def main():
     #metrices
     accuracy, matConf, matCohenKappa, \
     strClassificationReport = rf.getMetrics( classTest = rf.cTest, 
-                                                 classPred = rf.classPred)
-    
-    print('Avg. Precision Score = %0.2f %%\n' % (accuracy*100) )
-    print('Classification Report:\n = %s\n' % (strClassificationReport) )
-    print('Confusion Matrix:\n' )
-    print(matConf)
-    print('\n')
-    
+                                                 classPred = rf.classPred,
+                                                 boolPrint = True)
+    # cmap figure generation for confusion matrix
     rf.printConfusionMatrix( matConf )
     
     
