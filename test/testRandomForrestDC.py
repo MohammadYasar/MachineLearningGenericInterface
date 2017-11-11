@@ -16,7 +16,7 @@ def main():
     
     rf = randomForrest( enableLoggingTime=True )
     #load data
-    rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 20008)
+    rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 20000)
     #converting to numpy
     rf.dataConvertToNumpy()
     # double cross validation

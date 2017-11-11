@@ -17,7 +17,7 @@ class kNN( predictor ):
         self.n_neighbors = 3
         
         # sweeping for best method with cross validation
-        self.kSweep = [3, 5, 7, 9]
+        self.kSweep = [5, 21, 13]
         self.sweepingList = []
         
     def toString(self):
@@ -82,7 +82,7 @@ class kNN( predictor ):
             pClassTrain= pClass[train_index]
             pClassTest= pClass[test_index] 
             
-            bestAccuracy = -1
+            bestValAcc = -1
             # param sweeping list loop
             
             bestModel = []
@@ -95,8 +95,8 @@ class kNN( predictor ):
                 accuracy, accu_mean, std = self.singleCrossValidate( \
                                                     pFeatureTrain, pClassTrain,
                                                     nFold=5)
-                #print accu_mean
-                if accu_mean > bestAccuracy:
+                print accu_mean
+                if accu_mean > bestValAcc:
                     bestValAcc = accu_mean
                     bestParams = params
                     #bestModel = self.model
@@ -115,8 +115,10 @@ class kNN( predictor ):
                                                  boolPrint = False)
             # cmap figure generation for confusion matrix
 #            self.printConfusionMatrix( matConf )
-            print('Best model for fold #%d is k=%d with Val. Accu %0.3f \
-                  and Test Accu. %0.3f\n' %(foldNo, \
-                          bestParams[0], bestValAcc, testaccuracy))
+            printstr1 = "Best model for fold #%d is k=%d with \n\t" \
+                            % (foldNo, bestParams[0])
+            printstr2 = "Val. Accu %0.5f\n\t" % ( bestValAcc )
+            printstr3 = "Test Accu. %0.5f\n" % ( testaccuracy)
+            print printstr1 + printstr2 + printstr3
             foldNo += 1
 

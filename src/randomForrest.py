@@ -99,7 +99,7 @@ class randomForrest( predictor ):
             pClassTrain= pClass[train_index]
             pClassTest= pClass[test_index] 
             
-            bestAccuracy = -1
+            bestValAcc = -1
             # param sweeping list loop
             
             bestModel = []
@@ -113,11 +113,11 @@ class randomForrest( predictor ):
                                                     pFeatureTrain, pClassTrain,
                                                     nFold=5)
                 #print accu_mean
-                if accu_mean > bestAccuracy:
+                if accu_mean > bestValAcc:
                     bestValAcc = accu_mean
                     bestParams = params
                     #bestModel = self.model
-                    self.saveModel(fileName='best_kNN')
+                    self.saveModel(fileName='best_rf')
 
                     
             # loading best model through inner cross validation
@@ -134,7 +134,7 @@ class randomForrest( predictor ):
 #            self.printConfusionMatrix( matConf )
             printstr1 = "Best model for fold #%d is n_estimator=%d with \n\t" \
                             % (foldNo, bestParams[0])
-            printstr2 = "Val. Accu %0.3f\n\t" % ( bestValAcc )
-            printstr3 = "Test Accu. %0.3f\n" % ( testaccuracy)
+            printstr2 = "Val. Accu %0.5f\n\t" % ( bestValAcc )
+            printstr3 = "Test Accu. %0.5f\n" % ( testaccuracy)
             print printstr1 + printstr2 + printstr3
             foldNo += 1
