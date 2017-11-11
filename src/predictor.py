@@ -22,6 +22,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.metrics import average_precision_score
 from sklearn.metrics import confusion_matrix, cohen_kappa_score
 from sklearn.metrics import classification_report
+from sklearn.model_selection import KFold
 import matplotlib.pyplot as plt
 #from math import pi, sqrt, sin, cos, tan
 #from sets import Set
@@ -31,10 +32,10 @@ import os
 import shutil
 import operator as op
 import time
-import argparse
 import scipy.io as sio
 import logging
 import seaborn as sn
+from sklearn.externals import joblib
 
 class predictor(object):
     
@@ -56,6 +57,7 @@ class predictor(object):
         self.cTrain = []
         self.cTest = []
         self.baseLogger = []
+        self.fileName = []
         
         self.loggingLevel = loggingLevel
         if enableLoggingTime:
@@ -190,7 +192,7 @@ class predictor(object):
         if pModel is not None:
             self.model = pModel
         # training the model
-        print('Traning model ...')
+        print('Trainng model ...')
         self.model.fit(featureTrain, classTrain)
         return self.model
     
@@ -200,10 +202,9 @@ class predictor(object):
         # if model is given, override with internal model
         if pModel is not None:
             self.model = pModel 
-        print('Traning model ...')
+        print('Testing model ...')
         # predicting with trained model
         classPred = self.model.predict( featureTest )
-    
         return classPred
 
 #    def trainModel( self, featureTrain, classTrain):
@@ -257,7 +258,13 @@ class predictor(object):
 #        plt.yticks(range(classLabels), classLabels[:height])
 #        plt.savefig(filename+".png", dpi=dpi)
         
-    def crossValidate(self, pfeatures, pClass, nFold=5, pModel=None, 
+    def getKFold(self, pfeatures, nFold=5):
+        """function for index of train and test split for nFold
+        """
+        kf = KFold(n_splits=nFold)
+        return kf
+        
+    def singleCrossValidate(self, pfeatures, pClass, nFold=5, pModel=None, 
                       scoring='accuracy'):
         """function for cross validation
         """
@@ -267,3 +274,22 @@ class predictor(object):
         scores = cross_val_score(self.model, pfeatures, pClass, cv=nFold, 
                                  scoring=scoring)
         return scores, scores.mean(), scores.std()
+    
+    def saveModel(self, fileName, pModel=None):
+        """saving model to a file for future use
+        """
+        if pModel is not None:
+            self.model = pModel
+        self.fileName = fileName + '.sav'
+        #pickle.dump(self.model, open(fileName, 'wb')) 
+        joblib.dump(self.model, self.fileName)
+        self.baseLogger.debug('Saved model in %s' % self.fileName)
+
+    def loadModel(self, fileName=None):
+        """loading previously saved model
+        """
+        if fileName is not None:
+            self.fileName = fileName
+        #return pickle.load(open(self.fileName, 'rb'))  
+        return joblib.load(self.fileName)
+            
