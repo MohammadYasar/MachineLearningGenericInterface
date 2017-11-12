@@ -29,7 +29,7 @@ def main():
     allData = dT.doubleCrossValidate(dT.featureNumpy, 
                                              dT.ClassNumpy,
                                              nFoldOuter=5, nFoldInner=4,
-                                             fileName='dTData')
+                                             fileName='dT/dTData')
     
     print ValAccuList
     print ValStdList

@@ -16,8 +16,8 @@ def main():
     
     mySVM = sVM( enableLoggingTime=True )
     #load data
-    mySVM.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 30808)
-    
+    mySVM.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
+    #Feature reduction (loading previously saved data)
     feaSelecData = mySVM.loadVariables( 'featureExtractAll' )
     mySVM.selectImportantFeatures( feaSelecData['selectedIndices'] )
     
@@ -28,9 +28,11 @@ def main():
     ValAccuList, \
     ValStdList, \
     TestAccuList, \
-    bestParamList = mySVM.doubleCrossValidate(mySVM.featureNumpy, 
+    bestParamList, \
+    allData = mySVM.doubleCrossValidate(mySVM.featureNumpy, 
                                              mySVM.ClassNumpy,
-                                             nFoldOuter=5, nFoldInner=4)
+                                             nFoldOuter=5, nFoldInner=4,
+                                             fileName='sVM/sVMData')
     print ValAccuList
     print ValStdList
     print TestAccuList

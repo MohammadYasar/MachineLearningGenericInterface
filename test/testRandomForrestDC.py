@@ -17,6 +17,7 @@ def main():
     rf = randomForrest( enableLoggingTime=True )
     #load data
     rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 10000)
+    #Feature reduction (loading previously saved data)
     feaSelecData = rf.loadVariables( 'featureExtractAll' )
     rf.selectImportantFeatures( feaSelecData['selectedIndices'] )
     
@@ -25,8 +26,10 @@ def main():
     ValAccuList, \
     ValStdList, \
     TestAccuList, \
-    bestParamList = rf.doubleCrossValidate(rf.featureNumpy, rf.ClassNumpy, 
-                                           nFoldOuter=5, nFoldInner=4)
+    bestParamList, \
+    allData = rf.doubleCrossValidate(rf.featureNumpy, rf.ClassNumpy, 
+                                           nFoldOuter=5, nFoldInner=4,
+                                             fileName='rF/rFData')
     print ValAccuList
     print ValStdList
     print TestAccuList

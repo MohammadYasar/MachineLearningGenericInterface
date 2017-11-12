@@ -75,7 +75,8 @@ class randomForrest( predictor ):
         self.n_neighbors = params[0]
             
     def doubleCrossValidate(self, pfeatures, pClass, nFoldOuter=5, 
-                            nFoldInner=4, pModel=None, scoring='accuracy'):
+                            nFoldInner=4, fileName=None, pModel=None, 
+                            scoring='accuracy'):
         """function for cross validation
         """
         # if model is given, override with internal model
@@ -91,6 +92,7 @@ class randomForrest( predictor ):
         pKF = self.getKFold(pfeatures, nFold=nFoldOuter)
         foldNo = 1
         print( 'Double cross validation with fold %d started ...\n' %(nFoldOuter) )
+        OuterInnerFoldData = []
         # folds loop
         for train_index, test_index in pKF.split( pfeatures ):
             #print train_index
@@ -102,9 +104,8 @@ class randomForrest( predictor ):
             pClassTest= pClass[test_index] 
             
             bestValAcc = -1
+            eachInnerFoldData = []
             # param sweeping list loop
-            
-            bestModel = []
             for params in self.sweepingList:
                 # loading parameters from sweeping list
                 self.loadParametersFromList(params=params )
@@ -121,8 +122,9 @@ class randomForrest( predictor ):
                     bestParams = params
                     #bestModel = self.model
                     self.saveModel(fileName='best_RF')
-
-                    
+                eachInnerFoldData.append( [accuracy, conf] )
+            
+            OuterInnerFoldData.append(eachInnerFoldData) 
             # loading best model through inner cross validation from the saved
             # model in 'best_RF'
             self.loadSavedModel(fileName='best_RF')
@@ -147,6 +149,18 @@ class randomForrest( predictor ):
             ValStdList.append(bestValStd)
             bestParamList.append(bestParams)
             foldNo += 1
-            
+        if fileName is not None:
+            # OuterInnerFoldData 
+            #           [OuterFoldNo][ParamListIndex][Accu/Conf][InnerFoldNo]
+            self.saveDoubleCrossValidData(fileName=fileName, 
+                                     ValAccuList = ValAccuList, 
+                                     ValStdList = bestParamList,
+                                     TestAccuList = TestAccuList, 
+                                     bestParamList = bestParamList, 
+                                     OuterInnerFoldData= OuterInnerFoldData, 
+                                     sweepingList = self.sweepingList,
+                                     OuterFoldNo = nFoldOuter, 
+                                     InnerFoldNo = nFoldInner)
+        
         return np.array(ValAccuList), np.array(ValStdList), \
-                np.array(TestAccuList), bestParamList
+                np.array(TestAccuList), bestParamList, OuterInnerFoldData

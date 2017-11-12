@@ -105,9 +105,8 @@ class decisionTree( predictor ):
                     #bestModel = self.model
                     self.saveModel(fileName='best_DT')
                 eachInnerFoldData.append( [accuracy, conf] )
-                    
+            OuterInnerFoldData.append(eachInnerFoldData)      
             # loading best model through inner cross validation
-            OuterInnerFoldData.append(eachInnerFoldData)
             self.loadSavedModel('best_DT')
             self.trainModel( pFeatureTrain , pClassTrain)
             #print(self.model)
@@ -131,9 +130,6 @@ class decisionTree( predictor ):
             ValStdList.append(bestValStd)
             bestParamList.append(bestParams)
             foldNo += 1
-#        OuterInnerFoldData.append(self.sweepingList)
-#        OuterInnerFoldData.append([nFoldOuter, nFoldInner])
-#        OuterInnerFoldData.append(bestParamList)
         if fileName is not None:
             # OuterInnerFoldData 
             #           [OuterFoldNo][ParamListIndex][Accu/Conf][InnerFoldNo]

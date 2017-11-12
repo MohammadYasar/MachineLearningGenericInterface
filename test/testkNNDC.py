@@ -17,16 +17,20 @@ def main():
     ckNN = kNN( enableLoggingTime=True )
     #load data
     ckNN.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 10808)
+    #Feature reduction (loading previously saved data)
     feaSelecData = ckNN.loadVariables( 'featureExtractAll' )
     ckNN.selectImportantFeatures( feaSelecData['selectedIndices'] )
+    
     ckNN.kSweep = [1, 3, 5]
     # do double cross
     ValAccuList, \
     ValStdList, \
     TestAccuList, \
-    bestParamList = ckNN.doubleCrossValidate(ckNN.featureNumpy, 
+    bestParamList, \
+    allData = ckNN.doubleCrossValidate(ckNN.featureNumpy, 
                                              ckNN.ClassNumpy,
-                                             nFoldOuter=5, nFoldInner=4)
+                                             nFoldOuter=5, nFoldInner=4,
+                                             fileName='kNN/kNNData')
     print ValAccuList
     print ValStdList
     print TestAccuList

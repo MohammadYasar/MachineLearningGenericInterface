@@ -16,20 +16,22 @@ def main():
     
     adaB = adaBoost( enableLoggingTime=True )
     #load data
-    adaB.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
-    
+    adaB.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 28480)
+    #Feature reduction (loading previously saved data)
     feaSelecData = adaB.loadVariables( 'featureExtractAll' )
     adaB.selectImportantFeatures( feaSelecData['selectedIndices'] )
     
-    adaB.n_estimatorsSweep = [31, 51, 71]
+    adaB.n_estimatorsSweep = [5, 9, 13]
 
     # do double cross
     ValAccuList, \
     ValStdList, \
     TestAccuList, \
-    bestParamList = adaB.doubleCrossValidate(adaB.featureNumpy, 
+    bestParamList, \
+    allData  = adaB.doubleCrossValidate(adaB.featureNumpy, 
                                              adaB.ClassNumpy,
-                                             nFoldOuter=5, nFoldInner=4)
+                                             nFoldOuter=5, nFoldInner=4,
+                                             fileName='adaBoost/adaBoostData')
     print ValAccuList
     print ValStdList
     print TestAccuList
