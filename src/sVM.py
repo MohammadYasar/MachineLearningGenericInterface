@@ -6,74 +6,77 @@ Created on Fri Nov  10 09:05:26 2017
 @author: Mirza Elahi
 """
 from predictor import predictor
-from sklearn.ensemble import RandomForestClassifier
+from sklearn import svm
 import logging
 import numpy as np
 
-class randomForrest( predictor ): 
-   
+
+class sVM( predictor ): 
+       
     def __init__(self, loggingLevel = logging.INFO, enableLoggingTime = False):
-        # randomForrest class constructor
-        self.n_estimators = 50
-        self.oob_score = True
-        self.n_jobs = 4
-        super(randomForrest, self).__init__(loggingLevel, enableLoggingTime)
+        # kNN class constructor
+        super(sVM, self).__init__(loggingLevel, enableLoggingTime)
+        self.kernel = 'linear'
+        self.C=1
+        self.gamma='auto'
         
         # sweeping for best method with cross validation
-        self.n_estimatorsSweep = [31, 51, 71]
-        self.sweepingList = []
+        self.kernelSweep = ['linear', 'poly', 'rbf']
+        self.CSweep = [1, 100, 1000]
+        self.gammaSweep = ['auto', 10, 100] 
         
     def toString(self):
         """ Print parameters of current model
         """
-        pStr = "Current model:\n\tRandom Forest model with \n\t\tNo of estimator = %d \
-            \n\t\tOOB Score = %d\n\t\tNo of jobs = %d\n" % (self.n_estimators, \
-                                self.oob_score, self.n_jobs)
+        pStr = "Current model:\n\tSVM model with \n\t\tkernel = %s\n\t\tC = %d\n\t\tgamma = %s\n" \
+                        % (self.kernel, self.C, str(self.gamma))
         return pStr
         
-    def getModel(self, n_estimators=None, oob_score=None, n_jobs=None):
+    def getModel(self, kernel=None, C=None, gamma=None):
         """ Temporary model generation
         """
-        if n_estimators is not None:
-            self.n_estimators = n_estimators
-        if oob_score is not None:
-            self.oob_score = oob_score    
-        if n_jobs is not None:
-            self.n_jobs = n_jobs 
-        pModel = RandomForestClassifier(n_estimators = self.n_estimators, 
-                                            oob_score = self.oob_score, 
-                                            n_jobs = self.n_jobs)
+        if kernel is not None:
+            self.kernel = kernel
+        if C is not None:
+            self.C = C
+        if gamma is not None:
+            self.gamma = gamma
+        pModel = svm.SVC(kernel=self.kernel, C=self.C, gamma=self.gamma)
         return pModel
     
-    def loadModel(self, n_estimators=None, oob_score=None, n_jobs=None):
+    def loadModel(self, kernel=None, C=None, gamma=None):
         """ load internal model
         """
-        if n_estimators is not None:
-            self.n_estimators = n_estimators
-        if oob_score is not None:
-            self.oob_score = oob_score    
-        if n_jobs is not None:
-            self.n_jobs = n_jobs 
-            
+        if kernel is not None:
+            self.kernel = kernel
+        if C is not None:
+            self.C = C
+        if gamma is not None:
+            self.gamma = gamma
         self.model = []
-        self.model = self.getModel(n_estimators=self.n_estimators, 
-                                   oob_score=self.oob_score, 
-                                   n_jobs=self.n_jobs)
-    
-    
-    def makeSweepingList(self, n_estimatorsSweep=None):
+        self.model = self.getModel(kernel=self.kernel, C=self.C, 
+                                   gamma=self.gamma)
+        
+    def makeSweepingList(self, kernelSweep=None, CSweep=None, gammaSweep=None):
         """ making a list with all combinations of sweeping parameters
         """
-        if n_estimatorsSweep is not None:
-            self.n_estimatorsSweep = n_estimatorsSweep
-        self.sweepingList =  [[i] for i in self.n_estimatorsSweep]
+        if kernelSweep is not None:
+            self.kernelSweep = kernelSweep
+        if CSweep is not None:
+            self.CSweep = CSweep
+        if gammaSweep is not None:
+            self.gammaSweep = gammaSweep
+        self.sweepingList =  [[i, j, k] for i in self.kernelSweep \
+                              for j in self.CSweep for k in self.gammaSweep]
         return self.sweepingList 
         
-    def loadParametersFromList(self, params=[3]):
+    def loadParametersFromList(self, params=['linear', 1, 'auto']):
         """ override model parameters for the object from params
         """
-        self.n_neighbors = params[0]
-            
+        self.kernel = params[0]
+        self.C = params[1]
+        self.gamma = params[2]
+    
     def doubleCrossValidate(self, pfeatures, pClass, nFoldOuter=5, 
                             nFoldInner=4, pModel=None, scoring='accuracy'):
         """function for cross validation
@@ -86,7 +89,7 @@ class randomForrest( predictor ):
         ValAccuList=[]
         ValStdList = []
         TestAccuList = []
-        self.makeSweepingList(self.n_estimatorsSweep)
+        self.makeSweepingList(self.kernelSweep, self.CSweep, self.gammaSweep)
         # indexes for train and test 
         pKF = self.getKFold(pfeatures, nFold=nFoldOuter)
         foldNo = 1
@@ -107,25 +110,25 @@ class randomForrest( predictor ):
             bestModel = []
             for params in self.sweepingList:
                 # loading parameters from sweeping list
-                self.loadParametersFromList(params=params )
+                self.loadParametersFromList(params=params)
+                print params
                 # loading new model with definite parameters
                 self.loadModel()
                 
                 accuracy, accu_mean, std, conf = self.mySingleCrossValidate( \
                                                     pFeatureTrain, pClassTrain,
                                                     nFold=nFoldInner)
-                #print accu_mean
+                print accu_mean
                 if accu_mean > bestValAcc:
                     bestValAcc = accu_mean
                     bestValStd = std
                     bestParams = params
                     #bestModel = self.model
-                    self.saveModel(fileName='best_RF')
+                    self.saveModel(fileName='best_svm')
 
                     
-            # loading best model through inner cross validation from the saved
-            # model in 'best_RF'
-            self.loadSavedModel(fileName='best_RF')
+            # loading best model through inner cross validation
+            self.loadSavedModel(fileName='best_svm')
             self.trainModel( pFeatureTrain , pClassTrain)
             #print(self.model)
             classPred = self.testModel(pFeatureTest)
@@ -136,10 +139,10 @@ class randomForrest( predictor ):
                                                  boolPrint = False)
             # cmap figure generation for confusion matrix
 #            self.printConfusionMatrix( matConf )
-            printstr1 = "Best model for fold #%d is n_estimator=%d with \n\t" \
-                            % (foldNo, bestParams[0])
-            printstr2 = "Val. Accu %0.5f\n\t" % ( bestValAcc )
-            printstr3 = "Test Accu. %0.5f\n" % ( testaccuracy)
+            printstr1 = "Best model for fold #%d is kernel=%s, C=%d, gamma=%s with \n\t" \
+                            % ( foldNo, bestParams[0], bestParams[1], str(bestParams[0]) )
+            printstr2 = "Valid. Accu. %0.5f\n\t" % ( bestValAcc )
+            printstr3 = "Test Accu. %0.5f\n" % ( testaccuracy )
             print printstr1 + printstr2 + printstr3
             
             ValAccuList.append(bestValAcc)
@@ -147,6 +150,7 @@ class randomForrest( predictor ):
             ValStdList.append(bestValStd)
             bestParamList.append(bestParams)
             foldNo += 1
-            
+
         return np.array(ValAccuList), np.array(ValStdList), \
                 np.array(TestAccuList), bestParamList
+                    

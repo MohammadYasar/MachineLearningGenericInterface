@@ -36,6 +36,7 @@ import scipy.io as sio
 import logging
 import seaborn as sn
 from sklearn.externals import joblib
+from sklearn.metrics import accuracy_score
 
 class predictor(object):
     
@@ -49,6 +50,9 @@ class predictor(object):
         self.ClassNumpy = []
         self.featureNo = []
         self.dataNo = []
+        self.featureNames = []
+        self.feaRowStart = []
+        self.feaRowEnd = []
         
         self.model = []
         
@@ -102,6 +106,9 @@ class predictor(object):
            @param colClass - number of the col for Class (indexing starts from 0)
            @param delimitter - default comma
         """
+        self.feaRowStart = feaRowStart
+        self.feaRowEnd = feaRowEnd
+        
         self.dF = pd.read_csv( fileName, delimiter = delimiter)
         #if feaRowStart is not None and feaRowEnd is not None \
                #colFeaStart is not None and colFeaEnd is not None :
@@ -110,16 +117,25 @@ class predictor(object):
         self.Class = self.dF.iloc[feaRowStart-1:feaRowEnd, colClass-1]
         self.dataNo = feaRowEnd - feaRowStart + 1
         self.featureNo = colFeaEnd - colFeaStart + 1
+        
+        self.featureNames = self.dF.columns.values.tolist()
+        self.featureNames.remove('Class')
         print('Database loaded with: \n \
                   \t Feature No - %d \n \
                   \t Total data points - %d\n' % (self.featureNo, self.dataNo))
-        #else:
-        #    self.feature = self.dF.iloc[:,0:30]
-        #    self.Class = self.dF.Class 
-            #self.feature = self.dF.iloc[:, 0:self.dF.shape[1]-1]
-            #self.Class = self.dF.loc[:, self.dF.shape[1]-1:self.dF.shape[1]]  
-            
         self.dataConvertToNumpy()
+    
+    def selectImportantFeatures(self, indices):
+        """selecting features based 
+        """
+        previousFeatureNo = self.featureNo
+        self.featureNames = [self.featureNames[i] for i in indices]
+        self.feature = self.feature.loc[:, self.featureNames]
+        self.featureNo = len(indices)
+        self.dataConvertToNumpy()
+        
+        print( "Feature dimensionalty reduction:\n\tPrevious Size: %d\n\tCurrent Size: %d" % (previousFeatureNo, self.featureNo) )
+        
         
     def dataConvertToNumpy( self ):
         """Convert feature and Class to numpy, this can also be used for 
@@ -168,7 +184,8 @@ class predictor(object):
            @return strClassificationReport - TODO
         """
         # accuracy of the model - in one number
-        accuracy = average_precision_score( classTest, classPred )
+        accuracy = accuracy_score(classTest, classPred)
+        avgPrecScore = average_precision_score( classTest, classPred )
         # confusion matrix 2x2 matric
         matConf = confusion_matrix(classTest, classPred)
         # cohen Kappa is applicable for unbalanced data
@@ -183,7 +200,7 @@ class predictor(object):
             print(matConf)
             print('\n')
         
-        return accuracy, matConf, matCohenKappa, strClassificationReport
+        return accuracy, avgPrecScore, matConf, matCohenKappa, strClassificationReport
     
     def trainModel( self, featureTrain, classTrain, pModel=None):
         """overriding virtual function for training
@@ -192,7 +209,7 @@ class predictor(object):
         if pModel is not None:
             self.model = pModel
         # training the model
-        print('Trainng model ...')
+        self.baseLogger.debug('Trainng model ...')
         self.model.fit(featureTrain, classTrain)
         return self.model
     
@@ -202,7 +219,7 @@ class predictor(object):
         # if model is given, override with internal model
         if pModel is not None:
             self.model = pModel 
-        print('Testing model ...')
+        self.baseLogger.debug('Testing model ...')
         # predicting with trained model
         classPred = self.model.predict( featureTest )
         return classPred
@@ -224,39 +241,16 @@ class predictor(object):
         cmap = cmap or sn.cubehelix_palette(dark=0, light=1, as_cmap=True)
         df_cm = pd.DataFrame(confMatrix, index = [i for i in classLabels],
                   columns = [i for i in classLabels])
-        plt.figure(figsize = (2.5,2))
-        sn.heatmap(df_cm, annot=True, cmap=cmap)
+        plt.figure(figsize = (4,3.7))
+        ax = sn.heatmap(df_cm, annot=True, cmap=cmap)
+        for _, spine in ax.spines.items():
+            spine.set_visible(True)
+        ax.xaxis.tick_top()
+        ax.set_xlabel('Predicted', fontsize=14)  
+        ax.set_ylabel('Actual', fontsize=14)  
+        ax.xaxis.set_label_position('top')
+        ax.yaxis.set_label_position('left')
         plt.savefig( filename+".png", dpi=dpi )
-        # normalizing matrix
-#        norm_conf = []
-#        for i in confMatrix:
-#            a = 0
-#            tmp_arr = []
-#            a = sum(i, 0)
-#            for j in i:
-#                tmp_arr.append(float(j)/float(a))
-#            norm_conf.append(tmp_arr)
-#        
-#        fig = plt.figure()
-#        plt.clf()
-#        ax = fig.add_subplot(111)
-#        ax.set_aspect(1)
-#        res = ax.imshow(np.array(norm_conf), cmap=plt.cm.jet, 
-#                        interpolation='nearest')
-#        
-#        width, height = confMatrix.shape
-#        
-#        for x in xrange(width):
-#            for y in xrange(height):
-#                ax.annotate(str(confMatrix[x][y]), xy=(y, x), 
-#                            horizontalalignment='center',
-#                            verticalalignment='center')
-#        
-#        cb = fig.colorbar(res)
-#        #alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-#        plt.xticks(range(classLabels), classLabels[:width])
-#        plt.yticks(range(classLabels), classLabels[:height])
-#        plt.savefig(filename+".png", dpi=dpi)
         
     def getKFold(self, pfeatures, nFold=5):
         """function for index of train and test split for nFold
@@ -266,7 +260,7 @@ class predictor(object):
         
     def singleCrossValidate(self, pfeatures, pClass, nFold=5, pModel=None, 
                       scoring='accuracy'):
-        """function for cross validation
+        """function for cross validation with built in python lib
         """
         # if model is given, override with internal model
         if pModel is not None:
@@ -274,6 +268,39 @@ class predictor(object):
         scores = cross_val_score(self.model, pfeatures, pClass, cv=nFold, 
                                  scoring=scoring)
         return scores, scores.mean(), scores.std()
+    
+    def mySingleCrossValidate(self, pfeatures, pClass, nFold=5, pModel=None, 
+                      scoring='accuracy'):
+        """function for cross validation from scratch
+        """
+        # if model is given, override with internal model
+        if pModel is not None:
+            self.model = pModel 
+#        scores = cross_val_score(self.model, pfeatures, pClass, cv=nFold, 
+#                                 scoring=scoring)
+        scores = []
+        confMatList = []
+        pKF = self.getKFold(pfeatures, nFold=nFold)
+        foldNo = 1
+        tempModel = self.model # just for safety
+        for train_index, test_index in pKF.split( pfeatures ):
+            pFeatureTrain = pfeatures[train_index]
+            pFeatureTest = pfeatures[test_index]
+            pClassTrain= pClass[train_index]
+            pClassTest= pClass[test_index] 
+            self.model = tempModel
+            self.trainModel( pFeatureTrain, pClassTrain )
+            classPred = self.testModel( pFeatureTest )
+            #metrices
+            accuracy, avgPrecScore, matConf, matCohenKappa, \
+            strClassificationReport = self.getMetrics( pClassTest, 
+                                                 classPred,
+                                                 boolPrint = False)
+            scores.append(accuracy)
+            confMatList.append(matConf)
+            foldNo += 1
+        scores = np.array(scores)
+        return scores, scores.mean(), scores.std(), confMatList
     
     def saveModel(self, fileName, pModel=None):
         """saving model to a file for future use
@@ -285,11 +312,109 @@ class predictor(object):
         joblib.dump(self.model, self.fileName)
         self.baseLogger.debug('Saved model in %s' % self.fileName)
 
-    def loadModel(self, fileName=None):
+    def loadSavedModel(self, fileName=None):
         """loading previously saved model
         """
+        fileName = fileName + '.sav'
         if fileName is not None:
             self.fileName = fileName
         #return pickle.load(open(self.fileName, 'rb'))  
+        print("Loading saved model from: %s\n" % (self.fileName))
         return joblib.load(self.fileName)
-            
+    
+    def saveVariables(self, data, fileName):
+        """saving variable as dictionary
+        """
+        fileName = fileName + '.pkl'
+#        # Saving the objects:
+#        with open(fileName, 'w') as f:  # Python 3: open(..., 'wb')
+#            pickle.dump(data, f)
+        # Store data (serialize)
+        with open(fileName, 'wb') as handle:
+            pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    def loadVariables(self, fileName):
+        """loading variable as dictionary
+        """
+        fileName = fileName + '.pkl'
+        # Getting back the objects:
+#        with open(fileName) as f:  # Python 3: open(..., 'rb')
+#            data = pickle.load(f)
+        # Load data (deserialize)
+        with open(fileName, 'rb') as handle:
+            data = pickle.load(handle)
+        return data
+    def getBlankCLass(self):
+        """returns a blank class just to implement struct in python
+        """
+        return type('', (), {})()
+    
+    def featureSelectImportance(self, importances, threshold=0.015):
+        """function for selecting features above threashold
+        """
+        # sorting importances
+        indices = np.argsort(importances)
+        
+        data = {}
+        # importance unsorted
+        data['importances'] = importances   
+        # sorted indices according to importance
+        data['sortedIndices'] = indices    
+        # sorted feature names according to importances
+        data['sortedFeatureNames'] = [self.featureNames[x] for x in indices]
+        # selected indices above threshold
+        selectedIndices = [index for index, value in enumerate(data['importances']) if value > threshold] 
+        data['selectedIndices'] = selectedIndices
+        data['threshold'] = threshold
+        
+        return data
+    
+    def plotImportances(self, importances, threshold, fileName='sampleImportance', dpi=600):
+        """function for plotting sorted importance 
+        """
+        muliplier = 100
+        indices = np.argsort(importances)
+        L = importances.size
+        # Plot
+        plt.figure(figsize=(6,8))
+        plt.title('Feature Importances', fontsize = 16)
+        ypositions= np.array( range(len(indices)) )
+        
+        plt.barh(3*ypositions, importances[indices]*muliplier, color='b', align='center')
+        x = np.array([threshold, threshold])*muliplier
+        y = np.array([-3, 3*L+3])
+        # line for threshold
+        plt.plot(x, y, color='r', ls='--', lw=2)
+        # tick marks
+        featureTicks = [self.featureNames[x] for x in indices]
+        plt.yticks(3*ypositions, featureTicks, fontsize=10)
+        plt.xlabel('Relative Importance (%)', fontsize = 16)
+        fileName = fileName + '.png'
+        plt.savefig(fileName, dpi=dpi)
+        
+    def saveDoubleCrossValidData(self, fileName, ValAccuList, ValStdList,
+                TestAccuList, bestParamList, OuterInnerFoldData, sweepingList,
+                OuterFoldNo, InnerFoldNo):
+        """saving all necessary data for double cross validation 
+        """
+        bestParamIndexInSwpList = []
+        for param in bestParamList:
+            count = 0
+            for i in sweepingList:
+                if param == i:
+                    break
+                count +=1
+            bestParamIndexInSwpList.append(count)
+        data = {}
+        data['ValAccuList'] = np.array(ValAccuList)
+        data['ValStdList'] = np.array(ValStdList)
+        data['TestAccuList'] = np.array(TestAccuList)
+        data['bestParamList'] = np.array(bestParamList)
+        # OuterInnerFoldData 
+        #           [OuterFoldNo][ParamListIndex][Accu/Conf][InnerFoldNo]
+        data['OuterInnerFoldData'] = OuterInnerFoldData
+        data['sweepingList'] = np.array(sweepingList)
+        data['OuterFoldNo'] = OuterFoldNo
+        data['InnerFoldNo'] = InnerFoldNo
+        data['bestParamIndexInSwpList'] = np.array(bestParamIndexInSwpList)
+        self.saveVariables( data, fileName )
+        

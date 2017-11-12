@@ -10,22 +10,26 @@ import sys
 sys.path.append('../src/') 
 sys.path.append('../data/')  
 
-from kNN import kNN
+from sVM import sVM
 
 def main():
     
-    ckNN = kNN( enableLoggingTime=True )
+    mySVM = sVM( enableLoggingTime=True )
     #load data
-    ckNN.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 10808)
-    feaSelecData = ckNN.loadVariables( 'featureExtractAll' )
-    ckNN.selectImportantFeatures( feaSelecData['selectedIndices'] )
-    ckNN.kSweep = [1, 3, 5]
+    mySVM.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 30808)
+    
+    feaSelecData = mySVM.loadVariables( 'featureExtractAll' )
+    mySVM.selectImportantFeatures( feaSelecData['selectedIndices'] )
+    
+    mySVM.kernelSweep = ['linear', 'poly', 'rbf']
+    mySVM.CSweep = [1, 10]
+    mySVM.gammaSweep = ['auto', 5]
     # do double cross
     ValAccuList, \
     ValStdList, \
     TestAccuList, \
-    bestParamList = ckNN.doubleCrossValidate(ckNN.featureNumpy, 
-                                             ckNN.ClassNumpy,
+    bestParamList = mySVM.doubleCrossValidate(mySVM.featureNumpy, 
+                                             mySVM.ClassNumpy,
                                              nFoldOuter=5, nFoldInner=4)
     print ValAccuList
     print ValStdList

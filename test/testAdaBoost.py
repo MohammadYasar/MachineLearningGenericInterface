@@ -10,22 +10,25 @@ import sys
 sys.path.append('../src/') 
 sys.path.append('../data/')  
 
-from kNN import kNN
+from adaBoost import adaBoost
 
 def main():
     
-    ckNN = kNN( enableLoggingTime=True )
+    adaB = adaBoost( enableLoggingTime=True )
     #load data
-    ckNN.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 10808)
-    feaSelecData = ckNN.loadVariables( 'featureExtractAll' )
-    ckNN.selectImportantFeatures( feaSelecData['selectedIndices'] )
-    ckNN.kSweep = [1, 3, 5]
+    adaB.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
+    
+    feaSelecData = adaB.loadVariables( 'featureExtractAll' )
+    adaB.selectImportantFeatures( feaSelecData['selectedIndices'] )
+    
+    adaB.n_estimatorsSweep = [31, 51, 71]
+
     # do double cross
     ValAccuList, \
     ValStdList, \
     TestAccuList, \
-    bestParamList = ckNN.doubleCrossValidate(ckNN.featureNumpy, 
-                                             ckNN.ClassNumpy,
+    bestParamList = adaB.doubleCrossValidate(adaB.featureNumpy, 
+                                             adaB.ClassNumpy,
                                              nFoldOuter=5, nFoldInner=4)
     print ValAccuList
     print ValStdList

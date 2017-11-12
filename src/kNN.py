@@ -8,6 +8,8 @@ Created on Fri Nov  10 09:05:26 2017
 from predictor import predictor
 from sklearn.neighbors import KNeighborsClassifier
 import logging
+import numpy as np
+
 
 class kNN( predictor ): 
        
@@ -17,7 +19,7 @@ class kNN( predictor ):
         self.n_neighbors = 3
         
         # sweeping for best method with cross validation
-        self.kSweep = [5, 21, 13]
+        self.kSweep = [1, 3, 5]
         self.sweepingList = []
         
     def toString(self):
@@ -46,7 +48,7 @@ class kNN( predictor ):
     def makeSweepingList(self, kSweep=None):
         """ making a list with all combinations of sweeping parameters
         """
-        if kSweep is None:
+        if kSweep is not None:
             self.kSweep = kSweep
         self.sweepingList =  [[i] for i in self.kSweep]
         return self.sweepingList 
@@ -56,8 +58,8 @@ class kNN( predictor ):
         """
         self.n_neighbors = params[0]
     
-    def doubleCrossValidate(self, pfeatures, pClass, nFold=5, pModel=None, 
-                      scoring='accuracy'):
+    def doubleCrossValidate(self, pfeatures, pClass, nFoldOuter=5, 
+                            nFoldInner=4, pModel=None, scoring='accuracy'):
         """function for cross validation
         """
         # if model is given, override with internal model
@@ -66,12 +68,13 @@ class kNN( predictor ):
         
         bestParamList=[]
         ValAccuList=[]
+        ValStdList = []
         TestAccuList = []
         self.makeSweepingList(self.kSweep)
         # indexes for train and test 
-        pKF = self.getKFold(pfeatures, nFold=nFold)
+        pKF = self.getKFold(pfeatures, nFold=nFoldOuter)
         foldNo = 1
-        print( 'Double cross validation with fold %d started ...\n' %(nFold) )
+        print( 'Double cross validation with fold %d started ...\n' %(nFoldOuter) )
         # folds loop
         for train_index, test_index in pKF.split( pfeatures ):
             #print train_index
@@ -88,28 +91,29 @@ class kNN( predictor ):
             bestModel = []
             for params in self.sweepingList:
                 # loading parameters from sweeping list
-                self.loadParametersFromList(params=params )
+                self.loadParametersFromList(params=params)
                 # loading new model with definite parameters
                 self.loadModel()
                 
-                accuracy, accu_mean, std = self.singleCrossValidate( \
+                accuracy, accu_mean, std, conf = self.mySingleCrossValidate( \
                                                     pFeatureTrain, pClassTrain,
-                                                    nFold=5)
-                print accu_mean
+                                                    nFold=nFoldInner)
+                #print accu_mean
                 if accu_mean > bestValAcc:
                     bestValAcc = accu_mean
+                    bestValStd = std
                     bestParams = params
                     #bestModel = self.model
                     self.saveModel(fileName='best_kNN')
 
                     
             # loading best model through inner cross validation
-            self.loadModel()
+            self.loadSavedModel(fileName='best_kNN')
             self.trainModel( pFeatureTrain , pClassTrain)
             #print(self.model)
             classPred = self.testModel(pFeatureTest)
             #metrices
-            testaccuracy, matConf, matCohenKappa, \
+            testaccuracy, avgPrecScore, matConf, matCohenKappa, \
             strClassificationReport = self.getMetrics( classTest = pClassTest, 
                                                  classPred = classPred,
                                                  boolPrint = False)
@@ -120,5 +124,13 @@ class kNN( predictor ):
             printstr2 = "Val. Accu %0.5f\n\t" % ( bestValAcc )
             printstr3 = "Test Accu. %0.5f\n" % ( testaccuracy)
             print printstr1 + printstr2 + printstr3
+            
+            ValAccuList.append(bestValAcc)
+            TestAccuList.append(testaccuracy)
+            ValStdList.append(bestValStd)
+            bestParamList.append(bestParams)
             foldNo += 1
 
+        return np.array(ValAccuList), np.array(ValStdList), \
+                np.array(TestAccuList), bestParamList
+                    
