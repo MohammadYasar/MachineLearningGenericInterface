@@ -71,6 +71,7 @@ class kNN( predictor ):
         ValAccuList=[]
         ValStdList = []
         TestAccuList = []
+        TestConfList = []
         self.makeSweepingList(self.kSweep)
         # indexes for train and test 
         pKF = self.getKFold(pfeatures, nFold=nFoldOuter)
@@ -92,6 +93,7 @@ class kNN( predictor ):
             # param sweeping list loop
             for params in self.sweepingList:
                 # loading parameters from sweeping list
+                print params
                 self.loadParametersFromList(params=params)
                 # loading new model with definite parameters
                 self.loadModel()
@@ -99,7 +101,7 @@ class kNN( predictor ):
                 accuracy, accu_mean, std, conf = self.mySingleCrossValidate( \
                                                     pFeatureTrain, pClassTrain,
                                                     nFold=nFoldInner)
-                #print accu_mean
+                print accu_mean
                 if accu_mean > bestValAcc:
                     bestValAcc = accu_mean
                     bestValStd = std
@@ -130,6 +132,7 @@ class kNN( predictor ):
             
             ValAccuList.append(bestValAcc)
             TestAccuList.append(testaccuracy)
+            TestConfList.append(matConf)
             ValStdList.append(bestValStd)
             bestParamList.append(bestParams)
             foldNo += 1
@@ -140,6 +143,7 @@ class kNN( predictor ):
                                      ValAccuList = ValAccuList, 
                                      ValStdList = bestParamList,
                                      TestAccuList = TestAccuList, 
+                                     TestConfList = TestConfList,
                                      bestParamList = bestParamList, 
                                      OuterInnerFoldData= OuterInnerFoldData, 
                                      sweepingList = self.sweepingList,

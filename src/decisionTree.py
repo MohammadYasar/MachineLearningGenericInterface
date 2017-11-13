@@ -67,6 +67,7 @@ class decisionTree( predictor ):
         ValAccuList=[]
         ValStdList = []
         TestAccuList = []
+        TestConfList = []
         self.makeSweepingList(self.maxDepthSweep)
         # indexes for train and test 
         pKF = self.getKFold(pfeatures, nFold=nFoldOuter)
@@ -127,6 +128,7 @@ class decisionTree( predictor ):
             
             ValAccuList.append(bestValAcc)
             TestAccuList.append(testaccuracy)
+            TestConfList.append(matConf)
             ValStdList.append(bestValStd)
             bestParamList.append(bestParams)
             foldNo += 1
@@ -136,7 +138,8 @@ class decisionTree( predictor ):
             self.saveDoubleCrossValidData(fileName=fileName, 
                                      ValAccuList = ValAccuList, 
                                      ValStdList = bestParamList,
-                                     TestAccuList = TestAccuList, 
+                                     TestAccuList = TestAccuList,
+                                     TestConfList = TestConfList,
                                      bestParamList = bestParamList, 
                                      OuterInnerFoldData= OuterInnerFoldData, 
                                      sweepingList = self.sweepingList,

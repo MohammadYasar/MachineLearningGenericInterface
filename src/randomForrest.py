@@ -87,6 +87,7 @@ class randomForrest( predictor ):
         ValAccuList=[]
         ValStdList = []
         TestAccuList = []
+        TestConfList = []
         self.makeSweepingList(self.n_estimatorsSweep)
         # indexes for train and test 
         pKF = self.getKFold(pfeatures, nFold=nFoldOuter)
@@ -115,7 +116,8 @@ class randomForrest( predictor ):
                 accuracy, accu_mean, std, conf = self.mySingleCrossValidate( \
                                                     pFeatureTrain, pClassTrain,
                                                     nFold=nFoldInner)
-                #print accu_mean
+                print accu_mean
+                print params
                 if accu_mean > bestValAcc:
                     bestValAcc = accu_mean
                     bestValStd = std
@@ -146,6 +148,7 @@ class randomForrest( predictor ):
             
             ValAccuList.append(bestValAcc)
             TestAccuList.append(testaccuracy)
+            TestConfList.append(matConf)
             ValStdList.append(bestValStd)
             bestParamList.append(bestParams)
             foldNo += 1
@@ -156,6 +159,7 @@ class randomForrest( predictor ):
                                      ValAccuList = ValAccuList, 
                                      ValStdList = bestParamList,
                                      TestAccuList = TestAccuList, 
+                                     TestConfList = TestConfList,
                                      bestParamList = bestParamList, 
                                      OuterInnerFoldData= OuterInnerFoldData, 
                                      sweepingList = self.sweepingList,

@@ -16,7 +16,7 @@ def main():
     
     rf = randomForrest( enableLoggingTime=True )
     #load data
-    rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 10000)
+    rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
     #Feature reduction (loading previously saved data)
     feaSelecData = rf.loadVariables( 'featureExtractAll' )
     rf.selectImportantFeatures( feaSelecData['selectedIndices'] )

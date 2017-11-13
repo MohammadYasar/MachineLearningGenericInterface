@@ -242,7 +242,7 @@ class predictor(object):
         df_cm = pd.DataFrame(confMatrix, index = [i for i in classLabels],
                   columns = [i for i in classLabels])
         plt.figure(figsize = (4,3.7))
-        ax = sn.heatmap(df_cm, annot=True, cmap=cmap)
+        ax = sn.heatmap(df_cm, annot=True, cmap=cmap, fmt='g')
         for _, spine in ax.spines.items():
             spine.set_visible(True)
         ax.xaxis.tick_top()
@@ -392,7 +392,8 @@ class predictor(object):
         plt.savefig(fileName, dpi=dpi)
         
     def saveDoubleCrossValidData(self, fileName, ValAccuList, ValStdList,
-                TestAccuList, bestParamList, OuterInnerFoldData, sweepingList,
+                TestAccuList, TestConfList,
+                bestParamList, OuterInnerFoldData, sweepingList,
                 OuterFoldNo, InnerFoldNo):
         """saving all necessary data for double cross validation 
         """
@@ -408,6 +409,7 @@ class predictor(object):
         data['ValAccuList'] = np.array(ValAccuList)
         data['ValStdList'] = np.array(ValStdList)
         data['TestAccuList'] = np.array(TestAccuList)
+        data['TestConfList'] = TestConfList
         data['bestParamList'] = np.array(bestParamList)
         # OuterInnerFoldData 
         #           [OuterFoldNo][ParamListIndex][Accu/Conf][InnerFoldNo]

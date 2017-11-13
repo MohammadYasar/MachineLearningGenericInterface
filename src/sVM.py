@@ -19,6 +19,7 @@ class sVM( predictor ):
         self.kernel = 'linear'
         self.C=1
         self.gamma='auto'
+        self.max_iter = 50
         
         # sweeping for best method with cross validation
         self.kernelSweep = ['linear', 'poly', 'rbf']
@@ -41,7 +42,8 @@ class sVM( predictor ):
             self.C = C
         if gamma is not None:
             self.gamma = gamma
-        pModel = svm.SVC(kernel=self.kernel, C=self.C, gamma=self.gamma)
+        pModel = svm.SVC(kernel=self.kernel, C=self.C, gamma=self.gamma, 
+                         max_iter=self.max_iter)
         return pModel
     
     def loadModel(self, kernel=None, C=None, gamma=None):
@@ -90,6 +92,7 @@ class sVM( predictor ):
         ValAccuList=[]
         ValStdList = []
         TestAccuList = []
+        TestConfList = []
         self.makeSweepingList(self.kernelSweep, self.CSweep, self.gammaSweep)
         # indexes for train and test 
         pKF = self.getKFold(pfeatures, nFold=nFoldOuter)
@@ -149,6 +152,7 @@ class sVM( predictor ):
             
             ValAccuList.append(bestValAcc)
             TestAccuList.append(testaccuracy)
+            TestConfList.append(matConf)
             ValStdList.append(bestValStd)
             bestParamList.append(bestParams)
             foldNo += 1
@@ -160,6 +164,7 @@ class sVM( predictor ):
                                      ValAccuList = ValAccuList, 
                                      ValStdList = bestParamList,
                                      TestAccuList = TestAccuList, 
+                                     TestConfList = TestConfList,
                                      bestParamList = bestParamList, 
                                      OuterInnerFoldData= OuterInnerFoldData, 
                                      sweepingList = self.sweepingList,

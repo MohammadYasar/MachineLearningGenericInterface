@@ -10,29 +10,28 @@ import sys
 sys.path.append('../src/') 
 sys.path.append('../data/')  
 
-from sVM import sVM
+from adaBoost import adaBoost
 
 def main():
     
-    mySVM = sVM( enableLoggingTime=True )
+    adaB = adaBoost( enableLoggingTime=True )
     #load data
-    mySVM.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
+    adaB.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
     #Feature reduction (loading previously saved data)
-    feaSelecData = mySVM.loadVariables( 'featureExtractAll' )
-    mySVM.selectImportantFeatures( feaSelecData['selectedIndices'] )
-    mySVM.max_iter = 100000
-    mySVM.kernelSweep = ['linear', 'poly']
-    mySVM.CSweep = [1]
-    mySVM.gammaSweep = ['auto', 1]
+    feaSelecData = adaB.loadVariables( 'featureExtractAll' )
+    adaB.selectImportantFeatures( feaSelecData['selectedIndices'] )
+    
+    adaB.n_estimatorsSweep = [31, 51, 71]
+
     # do double cross
     ValAccuList, \
     ValStdList, \
     TestAccuList, \
     bestParamList, \
-    allData = mySVM.doubleCrossValidate(mySVM.featureNumpy, 
-                                             mySVM.ClassNumpy,
+    allData  = adaB.doubleCrossValidate(adaB.featureNumpy, 
+                                             adaB.ClassNumpy,
                                              nFoldOuter=5, nFoldInner=4,
-                                             fileName='sVM/sVMData')
+                                             fileName='adaBoost/adaBoostData')
     print ValAccuList
     print ValStdList
     print TestAccuList

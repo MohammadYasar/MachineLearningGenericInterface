@@ -16,7 +16,7 @@ def main():
     
     ckNN = kNN( enableLoggingTime=True )
     #load data
-    ckNN.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 10808)
+    ckNN.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
     #Feature reduction (loading previously saved data)
     feaSelecData = ckNN.loadVariables( 'featureExtractAll' )
     ckNN.selectImportantFeatures( feaSelecData['selectedIndices'] )

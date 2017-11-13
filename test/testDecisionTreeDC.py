@@ -16,7 +16,7 @@ def main():
     
     dT = decisionTree( enableLoggingTime=True )
     #load data
-    dT.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 20080)
+    dT.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
     feaSelecData = dT.loadVariables( 'featureExtractAll' )
     dT.selectImportantFeatures( feaSelecData['selectedIndices'] )
     

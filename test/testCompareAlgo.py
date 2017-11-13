@@ -1,0 +1,107 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Nov 10 16:43:00 2017
+
+@author: Mirza Elahi (me5vp)
+"""
+import sys
+# appending the path to PubPyPlot
+sys.path.append('../src/') 
+sys.path.append('../data/')  
+
+from predictor import predictor
+import matplotlib.pyplot as plt
+import numpy as np
+
+def myBoxPlot(data, algo, figName, xticks, ylim=[0.99, 1.001],
+              xlabel='Algorithms', ylabel='Accuracy', title=None):
+    fig = plt.figure(figsize=(8, 4))
+    
+    # Create an axes instance
+    ax = fig.add_subplot(111)
+    boxprops = dict(linewidth=3, color='#3852a3')
+    medianprops = dict(linestyle='-', linewidth=2.5, color='#ed1e23')
+    # Create the boxplot
+    plt.boxplot(data, boxprops=boxprops, 
+                patch_artist=True, medianprops =medianprops)
+    plt.ylim(ylim)
+    ax.set_xlabel(xlabel, fontsize=14)  
+    ax.set_ylabel(ylabel, fontsize=14) 
+    ax.set_xticklabels(xticks, rotation=45, fontsize=14)
+    if title is not None:
+       ax.set_title(title, fontsize=14)  
+    ## change outline color, fill color and linewidth of the boxes
+    
+    # Save the figure
+    #figName = "%s/%s_bestParamValidScore.png" % (algo, algo)
+    fig.savefig(figName, bbox_inches='tight', dpi=600)
+ 
+def myPlot(data, algo, figName, ylim=[0.99, 1.001], xlim=[0.5, 5.5],
+              xlabel='Outer Fold No.', ylabel='Accuracy', title=None):
+    fig = plt.figure(figsize=(8, 4))
+    x = np.arange(1, data.size+1)
+    # Create an axes instance
+    ax = fig.add_subplot(111)
+    boxprops = dict(linewidth=3, color='#3852a3')
+    medianprops = dict(linestyle='-', linewidth=2.5, color='#ed1e23')
+    # Create the boxplot
+    plt.plot(x, data, ls='', marker='s', markersize=10, color='#ed1e23')
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+    ax.set_xlabel(xlabel, fontsize=14)  
+    ax.set_ylabel(ylabel, fontsize=14) 
+    ax.set_xticks(x)
+    if title is not None:
+       ax.set_title(title, fontsize=14)  
+    ## change outline color, fill color and linewidth of the boxes
+    
+    # Save the figure
+    #figName = "%s/%s_bestParamValidScore.png" % (algo, algo)
+    fig.savefig(figName, bbox_inches='tight', dpi=600)
+def printForLatexTable(data, foldNo):
+    strPrint = "foldNo: %d " % (foldNo+1)
+    for i in range(data.size):
+        strPrint = strPrint + "& %0.8f " %( data[i] )
+        
+    print(strPrint+'\\\\ \n')
+        
+def printForLatexTableValidTest(valid, test):
+    print("Valid/Test ---")
+    for i in range(valid.size):
+        strPrint = " %d " % (i+1)
+        strPrint = strPrint + "& %0.8f & %0.8f " %( valid[i], test[i] )
+        strPrint = strPrint + '\\\\ \n\hline'
+        print(strPrint)
+        
+def main():
+    
+    #processList = ['dT', 'kNN', 'rF']
+    processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
+    count = 0
+    AccuracyValidBoxPlot = np.ndarray(shape=(5, len(processList)), dtype=float )
+    AccuracyTestBoxPlot = np.ndarray(shape=(5, len(processList)), dtype=float )
+    for algo in processList:
+    
+        dT = predictor( enableLoggingTime=True )
+        fileName = "%s/%sDataFinal" % (algo, algo)
+        data = dT.loadVariables(fileName=fileName)
+        ValAccuList = data['ValAccuList'] 
+        TestAccuList = data['TestAccuList']
+        AccuracyValidBoxPlot[:, count] = ValAccuList
+        AccuracyTestBoxPlot[:, count] = TestAccuList
+        count += 1
+        #    print ('%s & %0.2f & %s & %s & %s\\\\ \n \hline' % \
+#           (state_ind, X_train_not_normalized[i], tmp_2004, \
+#            tmp_pred, tmp_GT))
+    figName = "All/validationScoreCompare.png"
+    algoNames = ['DT', 'kNN', 'RF', 'AdaBoost', 'SVM']
+    myBoxPlot(AccuracyValidBoxPlot, algo, figName, ylim=[0.996, 1.001],
+                  title='Validation accuracy with different algorithms', xticks=algoNames )
+    figName = "All/testingScoreCompare.png"
+    myBoxPlot(AccuracyTestBoxPlot, algo, figName, ylim=[0.996, 1.001],
+                  title='Testing accuracy with different algorithms', xticks=algoNames )
+    
+if __name__ == '__main__':
+    
+    main()
