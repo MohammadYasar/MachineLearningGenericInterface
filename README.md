@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Machine Learning Project - Credit Card Fraud Detection
 
 # Structure:
@@ -14,3 +13,9 @@
 or
 
     conda install -c glemaitre imbalanced-learn
+
+# Tutorial:
+Here object oriented concept is used to implement any algorithm. For every
+algorithm, one needs to take the base class `predictor` and then implement its
+own version. For example, in `src` there are multiple implementations already.
+For testing the algorithms test scripts are available in `test`.
