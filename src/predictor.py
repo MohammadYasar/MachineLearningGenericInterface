@@ -22,7 +22,9 @@ from sklearn.model_selection import cross_val_score
 from sklearn.metrics import average_precision_score
 from sklearn.metrics import confusion_matrix, cohen_kappa_score
 from sklearn.metrics import classification_report
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.preprocessing import MinMaxScaler
+
 import matplotlib.pyplot as plt
 #from math import pi, sqrt, sin, cos, tan
 #from sets import Set
@@ -36,7 +38,14 @@ import scipy.io as sio
 import logging
 import seaborn as sn
 from sklearn.externals import joblib
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, matthews_corrcoef
+import enum
+
+class scoring(enum.Enum):
+        # scoring methods
+        ACCURACY = 0
+        MCC = 1
+
 
 class predictor(object):
     
@@ -98,7 +107,7 @@ class predictor(object):
         
     def loadData( self, fileName, colClass = 31, colFeaStart = 1, 
                  colFeaEnd = 30, feaRowStart = 2, 
-                 feaRowEnd = 284808, delimiter = ','):
+                 feaRowEnd = 284808, delimiter = ',' ):
         """loading data
            @param fileName - name of the csv file
            @param fearowStart - starting row of the feature or Class
@@ -125,8 +134,8 @@ class predictor(object):
                   \t Total data points - %d\n' % (self.featureNo, self.dataNo))
         self.dataConvertToNumpy()
     
-    def selectImportantFeatures(self, indices):
-        """selecting features based 
+    def selectImportantFeatures( self, indices ):
+        """selecting features based on given column indices
         """
         previousFeatureNo = self.featureNo
         self.featureNames = [self.featureNames[i] for i in indices]
@@ -135,6 +144,16 @@ class predictor(object):
         self.dataConvertToNumpy()
         
         print( "Feature dimensionalty reduction:\n\tPrevious Size: %d\n\tCurrent Size: %d" % (previousFeatureNo, self.featureNo) )
+       
+    def scaleFeature( self, minm=0, maxm=1, copy=True ):
+        """scaling features within minm and maxm
+        """
+        minmax_scale = MinMaxScaler(feature_range=(minm, maxm), copy=copy)
+        tempFea = minmax_scale.fit_transform( self.feature )
+        self.feature = pd.DataFrame( tempFea, columns=self.featureNames )
+        self.dataConvertToNumpy()
+        print( "Feature scaling done between %f and %f" % (minm, maxm) )
+       
         
         
     def dataConvertToNumpy( self ):
@@ -174,7 +193,8 @@ class predictor(object):
         
         return fTrain, fTest, cTrain, cTest
     
-    def getMetrics( self, classTest, classPred, boolPrint = True):
+    def getMetrics( self, classTest, classPred, scoring=scoring.ACCURACY, 
+                   boolPrint = True):
         """copying unbalanced for multiple times to balance dataset
            @param classTest
            @param classPred
@@ -182,7 +202,9 @@ class predictor(object):
            @return matConf - 2x2 matrix for 2 class classifier
            @return matCohenKappa - TODO
            @return strClassificationReport - TODO
+           @return mcc - Matthews correlation coefficient
         """
+        score = 0
         # accuracy of the model - in one number
         accuracy = accuracy_score(classTest, classPred)
         avgPrecScore = average_precision_score( classTest, classPred )
@@ -192,15 +214,23 @@ class predictor(object):
         matCohenKappa = cohen_kappa_score(classTest, classPred)
         # classification report
         strClassificationReport = classification_report(classTest, classPred)
-        
+        # Matthews correlation coefficient
+        mcc = matthews_corrcoef( classTest, classPred )
         if boolPrint is True:
-            print('Avg. Precision Score = %0.2f %%\n' % (accuracy*100) )
+            print('Accruacy = %f %%\n' % (accuracy*100) )
             print('Classification Report:\n = %s\n' % (strClassificationReport) )
             print('Confusion Matrix:\n' )
             print(matConf)
             print('\n')
-        
-        return accuracy, avgPrecScore, matConf, matCohenKappa, strClassificationReport
+            print('Matthews Corr. Coeff. = %f\n' % (mcc) )
+        # selecting score for comparison
+        if scoring == scoring.ACCURACY:
+            score = accuracy
+        elif scoring == scoring.MCC:
+            score = mcc
+            
+        return score, accuracy, avgPrecScore, matConf, matCohenKappa, \
+            strClassificationReport, mcc
     
     def trainModel( self, featureTrain, classTrain, pModel=None):
         """overriding virtual function for training
@@ -223,16 +253,6 @@ class predictor(object):
         # predicting with trained model
         classPred = self.model.predict( featureTest )
         return classPred
-
-#    def trainModel( self, featureTrain, classTrain):
-#        """virtual function for training
-#        """
-#        print('Traning model ...')
-#        
-#    def testModel( self, classTest, classPred):
-#        """virtual function for testing
-#        """
-#        print('Testing model ...')
     
     def printConfusionMatrix( self, confMatrix, 
                              classLabels=["0", "1"],
@@ -252,10 +272,13 @@ class predictor(object):
         ax.yaxis.set_label_position('left')
         plt.savefig( filename+".png", dpi=dpi )
         
-    def getKFold(self, pfeatures, nFold=5):
+    def getKFold(self, pfeatures, nFold=5, isStratified=False):
         """function for index of train and test split for nFold
         """
-        kf = KFold(n_splits=nFold)
+        if isStratified:
+            kf = StratifiedKFold( n_splits=nFold )
+        else:
+            kf = KFold( n_splits=nFold )
         return kf
         
     def singleCrossValidate(self, pfeatures, pClass, nFold=5, pModel=None, 
@@ -270,7 +293,7 @@ class predictor(object):
         return scores, scores.mean(), scores.std()
     
     def mySingleCrossValidate(self, pfeatures, pClass, nFold=5, pModel=None, 
-                      scoring='accuracy'):
+                      scoring=scoring.ACCURACY, isStratified=False):
         """function for cross validation from scratch
         """
         # if model is given, override with internal model
@@ -279,11 +302,14 @@ class predictor(object):
 #        scores = cross_val_score(self.model, pfeatures, pClass, cv=nFold, 
 #                                 scoring=scoring)
         scores = []
+        accuList = []
+        mccList = []
         confMatList = []
-        pKF = self.getKFold(pfeatures, nFold=nFold)
+        pKF = self.getKFold(pfeatures, nFold=nFold, 
+                            isStratified=isStratified)
         foldNo = 1
         tempModel = self.model # just for safety
-        for train_index, test_index in pKF.split( pfeatures ):
+        for train_index, test_index in pKF.split( pfeatures, pClass ):
             pFeatureTrain = pfeatures[train_index]
             pFeatureTest = pfeatures[test_index]
             pClassTrain= pClass[train_index]
@@ -292,15 +318,20 @@ class predictor(object):
             self.trainModel( pFeatureTrain, pClassTrain )
             classPred = self.testModel( pFeatureTest )
             #metrices
-            accuracy, avgPrecScore, matConf, matCohenKappa, \
-            strClassificationReport = self.getMetrics( pClassTest, 
+            score, accuracy, avgPrecScore, matConf, matCohenKappa, \
+            strClassificationReport, mcc = self.getMetrics( pClassTest, 
                                                  classPred,
+                                                 scoring = scoring,
                                                  boolPrint = False)
-            scores.append(accuracy)
-            confMatList.append(matConf)
+            scores.append( score )
+            accuList.append( accuracy )
+            confMatList.append( matConf )
+            mccList.append( mcc )
             foldNo += 1
-        scores = np.array(scores)
-        return scores, scores.mean(), scores.std(), confMatList
+        scores = np.array( scores )
+        accuracies = np.array( accuList )
+        mccs = np.array( mccList )
+        return scores, accuracies, confMatList, mccs
     
     def saveModel(self, fileName, pModel=None):
         """saving model to a file for future use
@@ -391,8 +422,8 @@ class predictor(object):
         fileName = fileName + '.png'
         plt.savefig(fileName, dpi=dpi)
         
-    def saveDoubleCrossValidData(self, fileName, ValAccuList, ValStdList,
-                TestAccuList, TestConfList,
+    def saveDoubleCrossValidData(self, fileName, ValScoreList, ValScoreStdList,
+                TestScoreList, TestConfList,
                 bestParamList, OuterInnerFoldData, sweepingList,
                 OuterFoldNo, InnerFoldNo):
         """saving all necessary data for double cross validation 
@@ -406,13 +437,11 @@ class predictor(object):
                 count +=1
             bestParamIndexInSwpList.append(count)
         data = {}
-        data['ValAccuList'] = np.array(ValAccuList)
-        data['ValStdList'] = np.array(ValStdList)
-        data['TestAccuList'] = np.array(TestAccuList)
+        data['ValScoreList'] = np.array(ValScoreList)
+        data['ValScoreStdList'] = np.array(ValScoreStdList)
+        data['TestScoreList'] = np.array(TestScoreList)
         data['TestConfList'] = TestConfList
         data['bestParamList'] = np.array(bestParamList)
-        # OuterInnerFoldData 
-        #           [OuterFoldNo][ParamListIndex][Accu/Conf][InnerFoldNo]
         data['OuterInnerFoldData'] = OuterInnerFoldData
         data['sweepingList'] = np.array(sweepingList)
         data['OuterFoldNo'] = OuterFoldNo

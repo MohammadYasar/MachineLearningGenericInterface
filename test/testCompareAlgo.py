@@ -76,31 +76,35 @@ def printForLatexTableValidTest(valid, test):
         
 def main():
     
-    #processList = ['dT', 'kNN', 'rF']
-    processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
+    processList = ['dT', 'kNN', 'rF']
+    #processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
     count = 0
-    AccuracyValidBoxPlot = np.ndarray(shape=(5, len(processList)), dtype=float )
-    AccuracyTestBoxPlot = np.ndarray(shape=(5, len(processList)), dtype=float )
+    ScoreValidBoxPlot = np.ndarray(shape=(5, len(processList)), dtype=float )
+    ScoreTestBoxPlot = np.ndarray(shape=(5, len(processList)), dtype=float )
     for algo in processList:
     
         dT = predictor( enableLoggingTime=True )
-        fileName = "%s/%sDataFinal" % (algo, algo)
+        fileName = "%s/%sData" % (algo, algo)
         data = dT.loadVariables(fileName=fileName)
-        ValAccuList = data['ValAccuList'] 
-        TestAccuList = data['TestAccuList']
-        AccuracyValidBoxPlot[:, count] = ValAccuList
-        AccuracyTestBoxPlot[:, count] = TestAccuList
+        ValScoreList = data['ValScoreList'] 
+        TestScoreList = data['TestScoreList']
+        ScoreValidBoxPlot[:, count] = ValScoreList
+        ScoreTestBoxPlot[:, count] = TestScoreList
         count += 1
         #    print ('%s & %0.2f & %s & %s & %s\\\\ \n \hline' % \
 #           (state_ind, X_train_not_normalized[i], tmp_2004, \
 #            tmp_pred, tmp_GT))
     figName = "All/validationScoreCompare.png"
     algoNames = ['DT', 'kNN', 'RF', 'AdaBoost', 'SVM']
-    myBoxPlot(AccuracyValidBoxPlot, algo, figName, ylim=[0.996, 1.001],
-                  title='Validation accuracy with different algorithms', xticks=algoNames )
+    myBoxPlot(ScoreValidBoxPlot, algo, figName, ylim=[0, 1.0],
+                  title='Validation MCC with different algorithms',
+                  ylabel='MCC', 
+                  xticks=algoNames )
     figName = "All/testingScoreCompare.png"
-    myBoxPlot(AccuracyTestBoxPlot, algo, figName, ylim=[0.996, 1.001],
-                  title='Testing accuracy with different algorithms', xticks=algoNames )
+    myBoxPlot(ScoreTestBoxPlot, algo, figName, ylim=[0, 1.0],
+                  title='Testing MCC with different algorithms',
+                  ylabel='MCC',
+                  xticks=algoNames )
     
 if __name__ == '__main__':
     

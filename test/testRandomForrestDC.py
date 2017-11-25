@@ -11,28 +11,37 @@ sys.path.append('../src/')
 sys.path.append('../data/')  
 
 from randomForrest import randomForrest
+from predictor import scoring
 
 def main():
     
     rf = randomForrest( enableLoggingTime=True )
     #load data
-    rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
+    rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 50480)
+    # feature scaling
+    rf.scaleFeature( minm=0, maxm=1 )
     #Feature reduction (loading previously saved data)
     feaSelecData = rf.loadVariables( 'featureExtractAll' )
     rf.selectImportantFeatures( feaSelecData['selectedIndices'] )
     
     rf.n_estimatorsSweep = [31, 51, 71]
     # do double cross
-    ValAccuList, \
-    ValStdList, \
-    TestAccuList, \
+    ValScoreList, \
+    ValScoreStdList, \
+    TestScoreList, \
     bestParamList, \
     allData = rf.doubleCrossValidate(rf.featureNumpy, rf.ClassNumpy, 
                                            nFoldOuter=5, nFoldInner=4,
-                                             fileName='rF/rFData')
-    print ValAccuList
-    print ValStdList
-    print TestAccuList
+                                           scoring=scoring.MCC,
+                                           isStratified = True,
+                                           fileName='rF/rFData')
+    print "Validation Avg. Score for outer folds with best param: \n"
+    print ValScoreList
+    print "Validation Score Std. for outer folds with best param: \n"
+    print ValScoreStdList
+    print "Test Avg. Score for outer folds with best param: \n"
+    print TestScoreList
+    print "Best Param list for outer folds: \n"
     print bestParamList
 if __name__ == '__main__': 
     main()

@@ -5,7 +5,7 @@ Created on Fri Nov  10 09:05:26 2017
 
 @author: Mirza Elahi
 """
-from predictor import predictor
+from predictor import predictor, scoring
 from sklearn.ensemble import AdaBoostClassifier
 import logging
 import numpy as np
@@ -59,7 +59,9 @@ class adaBoost( predictor ):
         self.n_estimators = params[0]
             
     def doubleCrossValidate(self, pfeatures, pClass, nFoldOuter=5, 
-                            nFoldInner=4, fileName=None, pModel=None, scoring='accuracy'):
+                            nFoldInner=4, fileName=None, pModel=None, 
+                            scoring=scoring.ACCURACY,
+                            isStratified=False):
         """function for cross validation
         """
         # if model is given, override with internal model
@@ -67,87 +69,92 @@ class adaBoost( predictor ):
             self.model = pModel 
         
         bestParamList=[]
-        ValAccuList=[]
-        ValStdList = []
-        TestAccuList = []
+        ValScoreList=[]
+        ValScoreStdList = []
+        TestScoreList = []
         TestConfList = []
-        self.makeSweepingList(self.n_estimatorsSweep)
+        self.makeSweepingList( self.n_estimatorsSweep )
         # indexes for train and test 
-        pKF = self.getKFold(pfeatures, nFold=nFoldOuter)
+        pKF = self.getKFold(pfeatures, nFold=nFoldOuter, 
+                            isStratified=isStratified)
         foldNo = 1
         print( 'Double cross validation with fold %d started ...\n' %(nFoldOuter) )
         OuterInnerFoldData = []
         # folds loop
-        for train_index, test_index in pKF.split( pfeatures ):
-            #print train_index
-            #print test_index
-            
+        for train_index, test_index in pKF.split( pfeatures, pClass ):
             pFeatureTrain = pfeatures[train_index]
             pFeatureTest = pfeatures[test_index]
             pClassTrain= pClass[train_index]
             pClassTest= pClass[test_index] 
             
-            bestValAcc = -1
+            bestScoreMean = -1E5
             eachInnerFoldData = []
             # param sweeping list loop
             for params in self.sweepingList:
                 # loading parameters from sweeping list
-                print params
-                self.loadParametersFromList(params=params )
+                self.loadParametersFromList( params=params )
                 # loading new model with definite parameters
                 self.loadModel()
                 
-                accuracy, accu_mean, std, conf = self.mySingleCrossValidate( \
-                                                    pFeatureTrain, pClassTrain,
-                                                    nFold=nFoldInner)
-                print accu_mean
-                if accu_mean > bestValAcc:
-                    bestValAcc = accu_mean
-                    bestValStd = std
+                score, \
+                accuracy, \
+                conf, \
+                mccs = self.mySingleCrossValidate( pFeatureTrain, pClassTrain,
+                                                    scoring=scoring,
+                                                    nFold=nFoldInner,
+                                                    isStratified=isStratified )
+                scoreMean = score.mean()
+                scoreStd = score.std()
+                
+                #print params
+                print scoreMean
+                if scoreMean > bestScoreMean:
+                    bestScoreMean = scoreMean
+                    bestScoreStd = scoreStd
                     bestParams = params
                     #bestModel = self.model
                     self.saveModel(fileName='best_ada')
-                eachInnerFoldData.append( [accuracy, conf] )
+                eachInnerFoldData.append( [score, accuracy, mccs, conf] )
             OuterInnerFoldData.append(eachInnerFoldData)
                     
             # loading best model through inner cross validation
             self.loadSavedModel(fileName='best_ada')
             self.trainModel(pFeatureTrain , pClassTrain)
-            #print(self.model)
+            # test model
             classPred = self.testModel(pFeatureTest)
             #metrices
-            testaccuracy, avgPrecScore, matConf, matCohenKappa, \
-            strClassificationReport = self.getMetrics( classTest = pClassTest, 
+            testScore, testaccuracy, avgPrecScore, matConf, matCohenKappa, \
+            strClassificationReport, mcc = self.getMetrics( classTest = pClassTest, 
                                                  classPred = classPred,
+                                                 scoring=scoring,
                                                  boolPrint = False)
-            # cmap figure generation for confusion matrix
-#            self.printConfusionMatrix( matConf )
+            
             printstr1 = "Best model for fold #%d is n_estimator=%d with \n\t" \
                             % (foldNo, bestParams[0])
-            printstr2 = "Valid. Accu. %0.5f\n\t" % ( bestValAcc )
-            printstr3 = "Test Accu. %0.5f\n" % ( testaccuracy)
+            printstr2 = "Val. Score %0.5f\n\t" % ( bestScoreMean )
+            printstr3 = "Test Score. %0.5f\n" % ( testScore )
             print printstr1 + printstr2 + printstr3
             
-            ValAccuList.append(bestValAcc)
-            TestAccuList.append(testaccuracy)
+            ValScoreList.append(bestScoreMean)
+            ValScoreStdList.append(bestScoreStd)
+            TestScoreList.append(testScore)
             TestConfList.append(matConf)
-            ValStdList.append(bestValStd)
             bestParamList.append(bestParams)
             foldNo += 1
             
         if fileName is not None:
             # OuterInnerFoldData 
-            #           [OuterFoldNo][ParamListIndex][Accu/Conf][InnerFoldNo]
+            # [OuterFoldNo][ParamListIndex][Score, Accu, MCC, Conf][InnerFoldNo]
             self.saveDoubleCrossValidData(fileName=fileName, 
-                                     ValAccuList = ValAccuList, 
-                                     ValStdList = bestParamList,
-                                     TestAccuList = TestAccuList,
-                                     TestConfList = TestConfList, 
+                                     ValScoreList = ValScoreList, 
+                                     ValScoreStdList = ValScoreStdList,
+                                     TestScoreList = TestScoreList,
+                                     TestConfList = TestConfList,
                                      bestParamList = bestParamList, 
                                      OuterInnerFoldData= OuterInnerFoldData, 
                                      sweepingList = self.sweepingList,
                                      OuterFoldNo = nFoldOuter, 
                                      InnerFoldNo = nFoldInner)
         
-        return np.array(ValAccuList), np.array(ValStdList), \
-                np.array(TestAccuList), bestParamList, OuterInnerFoldData
+        return np.array(ValScoreList), np.array(ValScoreStdList), \
+                np.array(TestScoreList), bestParamList, OuterInnerFoldData

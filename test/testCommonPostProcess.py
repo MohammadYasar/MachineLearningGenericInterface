@@ -16,6 +16,9 @@ import numpy as np
 
 def myBoxPlot(data, algo, figName, ylim=[0.99, 1.001],
               xlabel='Outer Fold No.', ylabel='Accuracy', title=None):
+    """ function for Box plot 
+        data in columns for each box
+    """
     fig = plt.figure(figsize=(8, 4))
     
     # Create an axes instance
@@ -38,6 +41,9 @@ def myBoxPlot(data, algo, figName, ylim=[0.99, 1.001],
  
 def myPlot(data, algo, figName, ylim=[0.99, 1.001], xlim=[0.5, 5.5],
               xlabel='Outer Fold No.', ylabel='Accuracy', title=None):
+    """ function for Box plot 
+        data in columns for each box
+    """
     fig = plt.figure(figsize=(8, 4))
     x = np.arange(1, data.size+1)
     # Create an axes instance
@@ -52,13 +58,12 @@ def myPlot(data, algo, figName, ylim=[0.99, 1.001], xlim=[0.5, 5.5],
     ax.set_ylabel(ylabel, fontsize=14) 
     ax.set_xticks(x)
     if title is not None:
-       ax.set_title(title, fontsize=14)  
-    ## change outline color, fill color and linewidth of the boxes
-    
-    # Save the figure
-    #figName = "%s/%s_bestParamValidScore.png" % (algo, algo)
+       ax.set_title(title, fontsize=14)
     fig.savefig(figName, bbox_inches='tight', dpi=600)
+    
 def printForLatexTable(data, foldNo):
+    """ function for printing LaTex format table details of each validation
+    """
     strPrint = "foldNo: %d " % (foldNo+1)
     for i in range(data.size):
         strPrint = strPrint + "& %0.8f " %( data[i] )
@@ -66,26 +71,29 @@ def printForLatexTable(data, foldNo):
     print(strPrint+'\\\\ \n')
         
 def printForLatexTableValidTest(valid, test):
+    """ function for printing LaTex format table avg. valid and test score only
+    """
     print("Valid/Test ---")
     for i in range(valid.size):
         strPrint = " %d " % (i+1)
         strPrint = strPrint + "& %0.8f & %0.8f " %( valid[i], test[i] )
         strPrint = strPrint + '\\\\ \n\hline'
         print(strPrint)
-        
+    strPrint = "mean & %0.8f & %0.8f\\\\ \n\hline" % (valid.mean(), test.mean())
+    print(strPrint)    
 def main():
     
-    #processList = ['dT', 'kNN', 'rF']
-    processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
+    processList = ['rF']
+    #processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
     count = 0
     for algo in processList:
     
         dT = predictor( enableLoggingTime=True )
-        fileName = "%s/%sDataFinal" % (algo, algo)
+        fileName = "%s/%sData" % (algo, algo)
         data = dT.loadVariables(fileName=fileName)
-        ValAccuList = data['ValAccuList'] 
-        ValStdList = data['ValStdList']
-        TestAccuList = data['TestAccuList']
+        ValScoreList = data['ValScoreList'] 
+        ValScoreStdList = data['ValScoreStdList']
+        TestScoreList = data['TestScoreList']
         TestConfList = data['TestConfList']
         bestParamList = data['bestParamList']
         
@@ -106,41 +114,42 @@ def main():
         print(  "best Params List index in paramList : %s\n" % (bestParamIndexInSwpList)  )
         print( "Outer Fold Size: %d\n" % len(OuterInnerFoldData) )
         
-        AccuracyBoxPlot = np.ndarray(shape=(InnerFoldNo, OuterFoldNo), dtype=float )
+        ScoreBoxPlot = np.ndarray(shape=(InnerFoldNo, OuterFoldNo), dtype=float )
         # Fold 1
         for outI in range( OuterFoldNo ):
             print( "Fold #%d\n" % (outI) )
             FoldData = OuterInnerFoldData[outI]
-            bestParamAccu = np.array( FoldData[bestParamIndexInSwpList[outI]][0] )
-            AccuracyBoxPlot[:, outI] = bestParamAccu
-            bestParamConf = np.array( FoldData[ bestParamIndexInSwpList[outI] ][ 1 ] )
-            print( "\tBest param Avg. Valid. Accu. = %0.8f\n"  % ( np.mean(bestParamAccu) ) )
-            print( "\tBest param Valid. Accu. = \t\t")
-            print bestParamAccu
+            bestParamScore = np.array( FoldData[bestParamIndexInSwpList[outI]][0] )
+            ScoreBoxPlot[:, outI] = bestParamScore
+            bestParamConf = np.array( FoldData[ bestParamIndexInSwpList[outI] ][ 3 ] )
+            print( "\tBest param Avg. Valid. Score = %0.8f\n"  % ( np.mean(bestParamScore) ) )
+            print( "\tBest param Valid. Score. = \t\t")
+            print bestParamScore
             
             # mean of accuracy for all param in outer fold
-            FoldAllAvgAccuracy = np.ndarray(shape=(NoOfParam), dtype=float )
+            FoldAllAvgScore = np.ndarray(shape=(NoOfParam), dtype=float )
             for paramI in range(NoOfParam):
-                paramAllAccuracy = np.array( FoldData[paramI][0] )
-                paramMeanAccuracy = paramAllAccuracy.mean()
-                FoldAllAvgAccuracy[paramI] = paramMeanAccuracy
-            printForLatexTable(FoldAllAvgAccuracy, outI)
+                paramAllScore = np.array( FoldData[paramI][0] )
+                paramMeanScore = paramAllScore.mean()
+                FoldAllAvgScore[paramI] = paramMeanScore
+            printForLatexTable(FoldAllAvgScore, outI)
             for inn in range( InnerFoldNo ):
                 fileName = "%s/O%d_I%d_conf" % (algo, outI, inn)
                 dT.printConfusionMatrix( bestParamConf[inn], filename=fileName )
             fileName = "%s/Test_O%d_conf" % (algo, outI)
             dT.printConfusionMatrix( TestConfList[outI], filename=fileName )
-        printForLatexTableValidTest(ValAccuList, TestAccuList)   
-        print ValAccuList
+        printForLatexTableValidTest(ValScoreList, TestScoreList)   
+        print ValScoreList
         #print AccuracyBoxPlot
         # Create a figure instance
         figName = "%s/%s_bestParamValidScore.png" % (algo, algo)
-        myBoxPlot(AccuracyBoxPlot, algo, figName, ylim=[0.99, 1.001],
-                  title='Accuracy with optimal params in Validation Set' )
+        myBoxPlot(ScoreBoxPlot, algo, figName, ylim=[0, 1.0],
+                  title='MCC with optimal params in Validation Set', 
+                  ylabel='MCC' )
         figName = "%s/%s_testingScore.png" % (algo, algo)
-        myPlot(TestAccuList, algo, figName, ylim=[0.992, 1.001],
-              xlabel='Outer Fold No.', ylabel='Accuracy', 
-              title='Accuracy with optimal params in Testing Set')
+        myPlot(TestScoreList, algo, figName, ylim=[0, 1.0],
+              xlabel='Outer Fold No.', ylabel='MCC', 
+              title='MCC with optimal params in Testing Set')
         count += 1
 if __name__ == '__main__':
     
