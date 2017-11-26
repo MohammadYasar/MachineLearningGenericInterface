@@ -3,7 +3,7 @@
 """
 Created on Fri Nov  10 09:05:26 2017
 
-@author: Mirza Elahi
+@author: Mohammad Yasar, Mirza Elahi 
 """
 from predictor import predictor, scoring, algo
 from xgboost import XGBClassifier
