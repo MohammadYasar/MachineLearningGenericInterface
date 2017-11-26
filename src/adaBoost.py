@@ -5,7 +5,7 @@ Created on Fri Nov  10 09:05:26 2017
 
 @author: Mirza Elahi
 """
-from predictor import predictor, scoring
+from predictor import predictor, scoring, algo
 from sklearn.ensemble import AdaBoostClassifier
 import logging
 import numpy as np
@@ -145,7 +145,7 @@ class adaBoost( predictor ):
         if fileName is not None:
             # OuterInnerFoldData 
             # [OuterFoldNo][ParamListIndex][Score, Accu, MCC, Conf][InnerFoldNo]
-            self.saveDoubleCrossValidData(fileName=fileName, 
+            self.saveDoubleCrossValidData( fileName=fileName, 
                                      ValScoreList = ValScoreList, 
                                      ValScoreStdList = ValScoreStdList,
                                      TestScoreList = TestScoreList,
@@ -154,7 +154,9 @@ class adaBoost( predictor ):
                                      OuterInnerFoldData= OuterInnerFoldData, 
                                      sweepingList = self.sweepingList,
                                      OuterFoldNo = nFoldOuter, 
-                                     InnerFoldNo = nFoldInner)
+                                     InnerFoldNo = nFoldInner,
+                                     scoring = scoring,
+                                     algorithm = algo.adaBoost )
         
         return np.array(ValScoreList), np.array(ValScoreStdList), \
                 np.array(TestScoreList), bestParamList, OuterInnerFoldData

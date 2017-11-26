@@ -17,7 +17,7 @@ def main():
     
     dT = decisionTree( enableLoggingTime=True )
     #load data
-    dT.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
+    dT.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 28480)
     # feature scaling
     dT.scaleFeature( minm=0, maxm=1 )
     # Reducing feature dimension based on importance

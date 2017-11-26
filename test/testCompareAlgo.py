@@ -12,6 +12,7 @@ sys.path.append('../data/')
 
 from predictor import predictor
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 
 def myBoxPlot(data, algo, figName, xticks, ylim=[0.99, 1.001],
@@ -22,13 +23,17 @@ def myBoxPlot(data, algo, figName, xticks, ylim=[0.99, 1.001],
     ax = fig.add_subplot(111)
     boxprops = dict(linewidth=3, color='#3852a3')
     medianprops = dict(linestyle='-', linewidth=2.5, color='#ed1e23')
+    label_size = 14
+    mpl.rcParams['xtick.labelsize'] = label_size 
+    mpl.rcParams['ytick.labelsize'] = label_size 
     # Create the boxplot
     plt.boxplot(data, boxprops=boxprops, 
-                patch_artist=True, medianprops =medianprops)
+                patch_artist=True, medianprops =medianprops,
+                widths = 0.2)
     plt.ylim(ylim)
-    ax.set_xlabel(xlabel, fontsize=14)  
-    ax.set_ylabel(ylabel, fontsize=14) 
-    ax.set_xticklabels(xticks, rotation=45, fontsize=14)
+    ax.set_xlabel(xlabel, fontsize=16)  
+    ax.set_ylabel(ylabel, fontsize=16) 
+    ax.set_xticklabels(xticks, rotation=45)
     if title is not None:
        ax.set_title(title, fontsize=14)  
     ## change outline color, fill color and linewidth of the boxes
@@ -76,11 +81,12 @@ def printForLatexTableValidTest(valid, test):
         
 def main():
     
-    processList = ['dT', 'kNN', 'rF']
+    processList = ['sVM']
     #processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
     count = 0
     ScoreValidBoxPlot = np.ndarray(shape=(5, len(processList)), dtype=float )
     ScoreTestBoxPlot = np.ndarray(shape=(5, len(processList)), dtype=float )
+    algoNames = []
     for algo in processList:
     
         dT = predictor( enableLoggingTime=True )
@@ -88,14 +94,16 @@ def main():
         data = dT.loadVariables(fileName=fileName)
         ValScoreList = data['ValScoreList'] 
         TestScoreList = data['TestScoreList']
+        algoName = data['algorithm']
         ScoreValidBoxPlot[:, count] = ValScoreList
         ScoreTestBoxPlot[:, count] = TestScoreList
+        algoNames.append( algoName.name )
         count += 1
         #    print ('%s & %0.2f & %s & %s & %s\\\\ \n \hline' % \
 #           (state_ind, X_train_not_normalized[i], tmp_2004, \
 #            tmp_pred, tmp_GT))
     figName = "All/validationScoreCompare.png"
-    algoNames = ['DT', 'kNN', 'RF', 'AdaBoost', 'SVM']
+    #algoNames = ['DT', 'kNN', 'RF', 'AdaBoost', 'SVM']
     myBoxPlot(ScoreValidBoxPlot, algo, figName, ylim=[0, 1.0],
                   title='Validation MCC with different algorithms',
                   ylabel='MCC', 

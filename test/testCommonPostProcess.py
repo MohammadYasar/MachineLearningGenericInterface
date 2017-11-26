@@ -12,6 +12,7 @@ sys.path.append('../data/')
 
 from predictor import predictor
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 
 def myBoxPlot(data, algo, figName, ylim=[0.99, 1.001],
@@ -25,12 +26,16 @@ def myBoxPlot(data, algo, figName, ylim=[0.99, 1.001],
     ax = fig.add_subplot(111)
     boxprops = dict(linewidth=3, color='#3852a3')
     medianprops = dict(linestyle='-', linewidth=2.5, color='#ed1e23')
+    label_size = 14
+    mpl.rcParams['xtick.labelsize'] = label_size 
+    mpl.rcParams['ytick.labelsize'] = label_size
     # Create the boxplot
     plt.boxplot(data, boxprops=boxprops, 
-                patch_artist=True, medianprops =medianprops)
+                patch_artist=True, medianprops =medianprops,
+                widths = 0.2)
     plt.ylim(ylim)
-    ax.set_xlabel(xlabel, fontsize=14)  
-    ax.set_ylabel(ylabel, fontsize=14) 
+    ax.set_xlabel(xlabel, fontsize=label_size+2)  
+    ax.set_ylabel(ylabel, fontsize=label_size+2) 
     if title is not None:
        ax.set_title(title, fontsize=14)  
     ## change outline color, fill color and linewidth of the boxes
@@ -83,7 +88,7 @@ def printForLatexTableValidTest(valid, test):
     print(strPrint)    
 def main():
     
-    processList = ['rF']
+    processList = ['sVM']
     #processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
     count = 0
     for algo in processList:
@@ -96,6 +101,8 @@ def main():
         TestScoreList = data['TestScoreList']
         TestConfList = data['TestConfList']
         bestParamList = data['bestParamList']
+        scoring = data['scoring']
+        scoring = scoring.name 
         
         # Fold data [OuterFoldNo][ParamListIndex][Accu/Conf][InnerFoldNo]
         OuterInnerFoldData = data['OuterInnerFoldData'] 
@@ -144,12 +151,12 @@ def main():
         # Create a figure instance
         figName = "%s/%s_bestParamValidScore.png" % (algo, algo)
         myBoxPlot(ScoreBoxPlot, algo, figName, ylim=[0, 1.0],
-                  title='MCC with optimal params in Validation Set', 
+                  title='%s with optimal params in Validation Set' % (scoring), 
                   ylabel='MCC' )
         figName = "%s/%s_testingScore.png" % (algo, algo)
         myPlot(TestScoreList, algo, figName, ylim=[0, 1.0],
               xlabel='Outer Fold No.', ylabel='MCC', 
-              title='MCC with optimal params in Testing Set')
+              title='%s with optimal params in Testing Set' % (scoring) )
         count += 1
 if __name__ == '__main__':
     

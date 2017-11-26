@@ -42,10 +42,19 @@ from sklearn.metrics import accuracy_score, matthews_corrcoef
 import enum
 
 class scoring(enum.Enum):
-        # scoring methods
-        ACCURACY = 0
-        MCC = 1
-
+    """Enum class for scoring method tracker"""
+    # scoring methods
+    ACCURACY = 0
+    MCC = 1
+        
+class algo(enum.Enum):
+    """Enum class for algorithm type"""
+    # algorithms
+    DT = 0          # Decision Tree
+    kNN = 1         # k nearest neighbor
+    RF = 2          # random forest
+    adaBoost = 3    # adaBoost
+    SVM = 4         # Support Vector Machine
 
 class predictor(object):
     
@@ -425,7 +434,7 @@ class predictor(object):
     def saveDoubleCrossValidData(self, fileName, ValScoreList, ValScoreStdList,
                 TestScoreList, TestConfList,
                 bestParamList, OuterInnerFoldData, sweepingList,
-                OuterFoldNo, InnerFoldNo):
+                OuterFoldNo, InnerFoldNo, scoring, algorithm):
         """saving all necessary data for double cross validation 
         """
         bestParamIndexInSwpList = []
@@ -447,5 +456,7 @@ class predictor(object):
         data['OuterFoldNo'] = OuterFoldNo
         data['InnerFoldNo'] = InnerFoldNo
         data['bestParamIndexInSwpList'] = np.array(bestParamIndexInSwpList)
+        data['scoring'] = scoring
+        data['algorithm'] = algorithm
         self.saveVariables( data, fileName )
         
