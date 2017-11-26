@@ -53,10 +53,11 @@ def myPlot(data, algo, figName, ylim=[0.99, 1.001], xlim=[0.5, 5.5],
     x = np.arange(1, data.size+1)
     # Create an axes instance
     ax = fig.add_subplot(111)
-    boxprops = dict(linewidth=3, color='#3852a3')
-    medianprops = dict(linestyle='-', linewidth=2.5, color='#ed1e23')
-    # Create the boxplot
+    
     plt.plot(x, data, ls='', marker='s', markersize=10, color='#ed1e23')
+    # mean value
+    plt.plot(np.array(xlim), np.array([np.mean(data), np.mean(data)]), 
+             ls='--', lw=1, color='#ed1e23')
     plt.xlim(xlim)
     plt.ylim(ylim)
     ax.set_xlabel(xlabel, fontsize=14)  
@@ -88,13 +89,14 @@ def printForLatexTableValidTest(valid, test):
     print(strPrint)    
 def main():
     
-    processList = ['sVM']
+    processList = ['rF']
+    printConfMat = False
     #processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
     count = 0
     for algo in processList:
     
         dT = predictor( enableLoggingTime=True )
-        fileName = "%s/%sData" % (algo, algo)
+        fileName = "%s/%sDataProj" % (algo, algo)
         data = dT.loadVariables(fileName=fileName)
         ValScoreList = data['ValScoreList'] 
         ValScoreStdList = data['ValScoreStdList']
@@ -140,20 +142,21 @@ def main():
                 paramMeanScore = paramAllScore.mean()
                 FoldAllAvgScore[paramI] = paramMeanScore
             printForLatexTable(FoldAllAvgScore, outI)
-            for inn in range( InnerFoldNo ):
-                fileName = "%s/O%d_I%d_conf" % (algo, outI, inn)
-                dT.printConfusionMatrix( bestParamConf[inn], filename=fileName )
-            fileName = "%s/Test_O%d_conf" % (algo, outI)
-            dT.printConfusionMatrix( TestConfList[outI], filename=fileName )
+            if printConfMat:
+                for inn in range( InnerFoldNo ):
+                    fileName = "%s/O%d_I%d_conf" % (algo, outI, inn)
+                    dT.printConfusionMatrix( bestParamConf[inn], filename=fileName )
+                fileName = "%s/Test_O%d_conf" % (algo, outI)
+                dT.printConfusionMatrix( TestConfList[outI], filename=fileName )
         printForLatexTableValidTest(ValScoreList, TestScoreList)   
         print ValScoreList
         #print AccuracyBoxPlot
         # Create a figure instance
-        figName = "%s/%s_bestParamValidScore.png" % (algo, algo)
+        figName = "%s/%s_bestParamValidScore.eps" % (algo, algo)
         myBoxPlot(ScoreBoxPlot, algo, figName, ylim=[0, 1.0],
                   title='%s with optimal params in Validation Set' % (scoring), 
                   ylabel='MCC' )
-        figName = "%s/%s_testingScore.png" % (algo, algo)
+        figName = "%s/%s_testingScore.eps" % (algo, algo)
         myPlot(TestScoreList, algo, figName, ylim=[0, 1.0],
               xlabel='Outer Fold No.', ylabel='MCC', 
               title='%s with optimal params in Testing Set' % (scoring) )

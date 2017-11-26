@@ -17,14 +17,14 @@ def main():
     
     rf = randomForrest( enableLoggingTime=True )
     #load data
-    rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 50480)
+    rf.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
     # feature scaling
     rf.scaleFeature( minm=0, maxm=1 )
     #Feature reduction (loading previously saved data)
     feaSelecData = rf.loadVariables( 'featureExtractAll' )
     rf.selectImportantFeatures( feaSelecData['selectedIndices'] )
     
-    rf.n_estimatorsSweep = [31, 51, 71]
+    rf.n_estimatorsSweep = [51, 71, 91]
     # do double cross
     ValScoreList, \
     ValScoreStdList, \

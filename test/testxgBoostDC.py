@@ -17,7 +17,7 @@ def main():
     
     xgb = xgBoost( enableLoggingTime=True )
     #load data
-    xgb.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 28480)
+    xgb.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
     # feature scaling
     xgb.scaleFeature( minm=0, maxm=1 )
     # Reducing feature dimension based on importance

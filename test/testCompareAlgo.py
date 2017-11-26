@@ -81,7 +81,7 @@ def printForLatexTableValidTest(valid, test):
         
 def main():
     
-    processList = ['sVM']
+    processList = ['rF', 'xgBoost']
     #processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
     count = 0
     ScoreValidBoxPlot = np.ndarray(shape=(5, len(processList)), dtype=float )
@@ -90,7 +90,7 @@ def main():
     for algo in processList:
     
         dT = predictor( enableLoggingTime=True )
-        fileName = "%s/%sData" % (algo, algo)
+        fileName = "%s/%sDataProj" % (algo, algo)
         data = dT.loadVariables(fileName=fileName)
         ValScoreList = data['ValScoreList'] 
         TestScoreList = data['TestScoreList']
@@ -102,13 +102,13 @@ def main():
         #    print ('%s & %0.2f & %s & %s & %s\\\\ \n \hline' % \
 #           (state_ind, X_train_not_normalized[i], tmp_2004, \
 #            tmp_pred, tmp_GT))
-    figName = "All/validationScoreCompare.png"
+    figName = "All/validationScoreCompare.eps"
     #algoNames = ['DT', 'kNN', 'RF', 'AdaBoost', 'SVM']
     myBoxPlot(ScoreValidBoxPlot, algo, figName, ylim=[0, 1.0],
                   title='Validation MCC with different algorithms',
                   ylabel='MCC', 
                   xticks=algoNames )
-    figName = "All/testingScoreCompare.png"
+    figName = "All/testingScoreCompare.eps"
     myBoxPlot(ScoreTestBoxPlot, algo, figName, ylim=[0, 1.0],
                   title='Testing MCC with different algorithms',
                   ylabel='MCC',

@@ -8,6 +8,12 @@
 + `utility` - raw files from individual
 
 # Requirements:
+### `XGBoost` package:
+    pip install xgboost
+or
+
+    conda install -c conda-forge xgboost
+
 ### `imblearn` package:
     pip install -U imbalanced-learn
 or
