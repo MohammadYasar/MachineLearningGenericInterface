@@ -55,6 +55,7 @@ class algo(enum.Enum):
     RF = 2          # random forest
     adaBoost = 3    # adaBoost
     SVM = 4         # Support Vector Machine
+    xgBoost = 5     # Extreme gradient boosting
 
 class predictor(object):
     
@@ -242,7 +243,7 @@ class predictor(object):
             strClassificationReport, mcc
     
     def trainModel( self, featureTrain, classTrain, pModel=None):
-        """overriding virtual function for training
+        """function for training
         """
         # if model is given, override with internal model
         if pModel is not None:
@@ -253,7 +254,7 @@ class predictor(object):
         return self.model
     
     def testModel( self, featureTest, pModel=None):
-        """overriding virtual function for testing
+        """function for testing
         """
         # if model is given, override with internal model
         if pModel is not None:
