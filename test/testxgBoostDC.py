@@ -17,7 +17,7 @@ def main():
     
     xgb = xgBoost( enableLoggingTime=True )
     #load data
-    xgb.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
+    xgb.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 28480)
     # feature scaling
     xgb.scaleFeature( minm=0, maxm=1 )
     # Reducing feature dimension based on importance
@@ -25,7 +25,7 @@ def main():
     xgb.selectImportantFeatures( feaSelectData['selectedIndices'] )
     
     # sweeping parameters lists
-    xgb.maxDepthSweep = [6, 10, 14]
+    xgb.max_depthSweep = [6, 10, 14]
     xgb.n_estimatorsSweep = [51, 71]
     
     
