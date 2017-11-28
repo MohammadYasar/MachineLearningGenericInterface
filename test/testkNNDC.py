@@ -17,7 +17,7 @@ def main():
     
     ckNN = kNN( enableLoggingTime=True )
     #load data
-    ckNN.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 28480)
+    ckNN.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
     # feature scaling
     ckNN.scaleFeature( minm=0, maxm=1 )
     #Feature reduction (loading previously saved data)

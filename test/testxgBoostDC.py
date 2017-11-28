@@ -26,7 +26,7 @@ def main():
     
     # sweeping parameters lists
     xgb.max_depthSweep = [6, 10, 14]
-    xgb.n_estimatorsSweep = [51, 71]
+    xgb.n_estimatorsSweep = [51, 71, 91]
     
     
     ValScoreList, \

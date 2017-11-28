@@ -17,7 +17,7 @@ def main():
     
     mySVM = sVM( enableLoggingTime=True )
     #load data
-    mySVM.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 28480)
+    mySVM.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
     # feature scaling
     mySVM.scaleFeature( minm=0, maxm=1 )
     #Feature reduction (loading previously saved data)
@@ -27,7 +27,7 @@ def main():
     mySVM.max_iter = 1E5
     # sweeping parameter lists
     mySVM.kernelSweep = ['linear', 'poly']
-    mySVM.CSweep = [1]
+    mySVM.CSweep = [1, 5]
     mySVM.gammaSweep = ['auto', 1]
     
     # do double cross

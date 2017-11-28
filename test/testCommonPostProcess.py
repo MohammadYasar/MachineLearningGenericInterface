@@ -89,9 +89,9 @@ def printForLatexTableValidTest(valid, test):
     print(strPrint)    
 def main():
     
-    processList = ['rF']
+    #processList = ['xgBoost']
     printConfMat = False
-    #processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
+    processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM', 'xgBoost']
     count = 0
     for algo in processList:
     

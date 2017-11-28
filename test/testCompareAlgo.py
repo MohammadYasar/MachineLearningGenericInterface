@@ -40,7 +40,8 @@ def myBoxPlot(data, algo, figName, xticks, ylim=[0.99, 1.001],
     
     # Save the figure
     #figName = "%s/%s_bestParamValidScore.png" % (algo, algo)
-    fig.savefig(figName, bbox_inches='tight', dpi=600)
+    fig.savefig(figName+".png", bbox_inches='tight', dpi=600)
+    fig.savefig(figName+".eps", bbox_inches='tight', dpi=600)
  
 def myPlot(data, algo, figName, ylim=[0.99, 1.001], xlim=[0.5, 5.5],
               xlabel='Outer Fold No.', ylabel='Accuracy', title=None):
@@ -63,7 +64,8 @@ def myPlot(data, algo, figName, ylim=[0.99, 1.001], xlim=[0.5, 5.5],
     
     # Save the figure
     #figName = "%s/%s_bestParamValidScore.png" % (algo, algo)
-    fig.savefig(figName, bbox_inches='tight', dpi=600)
+    fig.savefig(figName+".png", bbox_inches='tight', dpi=600)
+    fig.savefig(figName+".eps", bbox_inches='tight', dpi=600)
 def printForLatexTable(data, foldNo):
     strPrint = "foldNo: %d " % (foldNo+1)
     for i in range(data.size):
@@ -81,7 +83,7 @@ def printForLatexTableValidTest(valid, test):
         
 def main():
     
-    processList = ['rF', 'xgBoost']
+    processList = ['dT', 'kNN', 'rF','adaBoost', 'sVM' , 'xgBoost']
     #processList = ['dT', 'kNN', 'rF', 'adaBoost', 'sVM']
     count = 0
     ScoreValidBoxPlot = np.ndarray(shape=(5, len(processList)), dtype=float )
@@ -102,13 +104,13 @@ def main():
         #    print ('%s & %0.2f & %s & %s & %s\\\\ \n \hline' % \
 #           (state_ind, X_train_not_normalized[i], tmp_2004, \
 #            tmp_pred, tmp_GT))
-    figName = "All/validationScoreCompare.eps"
+    figName = "All/validationScoreCompare"
     #algoNames = ['DT', 'kNN', 'RF', 'AdaBoost', 'SVM']
     myBoxPlot(ScoreValidBoxPlot, algo, figName, ylim=[0, 1.0],
                   title='Validation MCC with different algorithms',
                   ylabel='MCC', 
                   xticks=algoNames )
-    figName = "All/testingScoreCompare.eps"
+    figName = "All/testingScoreCompare"
     myBoxPlot(ScoreTestBoxPlot, algo, figName, ylim=[0, 1.0],
                   title='Testing MCC with different algorithms',
                   ylabel='MCC',

@@ -17,7 +17,7 @@ def main():
     
     adaB = adaBoost( enableLoggingTime=True )
     #load data
-    adaB.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 28480)
+    adaB.loadData( fileName = '../data/creditcard.csv', feaRowEnd = 284808)
     # feature scaling
     adaB.scaleFeature( minm=0, maxm=1 )
     #Feature reduction (loading previously saved data)
